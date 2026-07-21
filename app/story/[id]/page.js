@@ -1,4 +1,4 @@
-import { getStoryById } from '../../actions';
+import { getStoryById } from '../../data';
 import Link from 'next/link';
 
 export default async function StoryDetail({ params }) {

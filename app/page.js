@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getStories } from './actions';
+import { getStories } from './data';
 import MasonryItem from './components/MasonryItem';
 import Timeline from './components/Timeline';
 

@@ -3,43 +3,17 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { getStories } from './data';
 
 const dataFile = path.join(process.cwd(), 'data', 'stories.json');
 const uploadDir = path.join(process.cwd(), 'public', 'uploads');
 
-// Ensure directories exist
-async function init() {
-  try {
-    await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true });
-    await fs.mkdir(uploadDir, { recursive: true });
-    // create stories.json if not exists
-    try {
-      await fs.access(dataFile);
-    } catch {
-      await fs.writeFile(dataFile, '[]');
-    }
-  } catch (error) {
-    console.error("Init error", error);
-  }
-}
-
-export async function getStories() {
-  await init();
-  try {
-    const fileContents = await fs.readFile(dataFile, 'utf8');
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function getStoryById(id) {
-  const stories = await getStories();
-  return stories.find(s => s.id === id) || null;
+async function ensureUploadDir() {
+  await fs.mkdir(uploadDir, { recursive: true });
 }
 
 export async function createStory(formData) {
-  await init();
+  await ensureUploadDir();
   
   const title = formData.get('title');
   const content = formData.get('content');
