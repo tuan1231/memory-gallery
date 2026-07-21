@@ -75,14 +75,19 @@ export async function archiveStory(id, password) {
     throw new Error('Incorrect password!');
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('stories')
     .update({ is_archived: true, archived_at: new Date().toISOString() })
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (error) {
     console.error('Error archiving story:', error);
     throw new Error('Failed to archive memory.');
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Lưu trữ thất bại! Hãy kiểm tra lại Supabase: Bảng "stories" đang bị chặn quyền UPDATE bởi RLS. Vui lòng tắt RLS hoặc thêm policy cho phép UPDATE nhé.');
   }
 }
 
@@ -91,14 +96,19 @@ export async function restoreStory(id, password) {
     throw new Error('Incorrect password!');
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('stories')
     .update({ is_archived: false, archived_at: null })
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (error) {
     console.error('Error restoring story:', error);
     throw new Error('Failed to restore memory.');
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Khôi phục thất bại! Bị chặn quyền UPDATE bởi RLS trên Supabase.');
   }
 }
 
@@ -120,14 +130,19 @@ export async function deleteStoryPermanently(id, password) {
   }
 
   // Delete from DB
-  const { error: deleteError } = await supabase
+  const { data, error: deleteError } = await supabase
     .from('stories')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (deleteError) {
     console.error('Error deleting story:', deleteError);
     throw new Error('Failed to delete memory permanently.');
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Xóa thất bại! Bảng "stories" đang bị chặn quyền DELETE bởi RLS trên Supabase. Vui lòng tắt RLS hoặc thêm policy cho phép DELETE nhé.');
   }
 
   // Delete image from storage if it exists
