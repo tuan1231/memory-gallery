@@ -40,7 +40,7 @@ export async function getStories() {
   const { data, error } = await supabase
     .from('stories')
     .select('*')
-    .is('is_archived', false) // or we could use .neq('is_archived', true) if some are null
+    .or('is_archived.is.null,is_archived.eq.false')
     .order('created_at', { ascending: false });
 
   if (error) {
