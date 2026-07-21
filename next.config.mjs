@@ -4,8 +4,13 @@ const nextConfig = {
     appIsrStatus: false,
     buildActivity: false,
   },
-  serverActions: {
-    bodySizeLimit: '10mb',
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { archiveStory, deleteStoryPermanently, restoreStory } from '../actions';
-import { Trash, ArchiveTray, ArrowUUpLeft } from '@phosphor-icons/react';
+import { Trash, Archive, ArrowUUpLeft } from '@phosphor-icons/react';
 
 export default function StoryActions({ storyId, isArchived }) {
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,7 @@ export default function StoryActions({ storyId, isArchived }) {
         disabled={loading}
         className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-sm border border-red-500/20"
       >
-        <ArchiveTray size={20} />
+        <Archive size={20} />
         {loading ? 'Archiving...' : 'Move to Archive'}
       </button>
     </div>
