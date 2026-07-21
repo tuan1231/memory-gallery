@@ -69,3 +69,77 @@ export async function createStory(formData) {
 
   return storyId;
 }
+
+export async function archiveStory(id, password) {
+  if (password !== 'iloveyou') {
+    throw new Error('Incorrect password!');
+  }
+
+  const { error } = await supabase
+    .from('stories')
+    .update({ is_archived: true, archived_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error archiving story:', error);
+    throw new Error('Failed to archive memory.');
+  }
+}
+
+export async function restoreStory(id, password) {
+  if (password !== 'iloveyou') {
+    throw new Error('Incorrect password!');
+  }
+
+  const { error } = await supabase
+    .from('stories')
+    .update({ is_archived: false, archived_at: null })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error restoring story:', error);
+    throw new Error('Failed to restore memory.');
+  }
+}
+
+export async function deleteStoryPermanently(id, password) {
+  if (password !== 'iloveyou') {
+    throw new Error('Incorrect password!');
+  }
+
+  // First, get the story to find the image URL
+  const { data: story, error: fetchError } = await supabase
+    .from('stories')
+    .select('image_url')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching story for deletion:', fetchError);
+    throw new Error('Failed to fetch memory for deletion.');
+  }
+
+  // Delete from DB
+  const { error: deleteError } = await supabase
+    .from('stories')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    console.error('Error deleting story:', deleteError);
+    throw new Error('Failed to delete memory permanently.');
+  }
+
+  // Delete image from storage if it exists
+  if (story && story.image_url) {
+    try {
+      const urlParts = story.image_url.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      if (filename) {
+        await supabase.storage.from('uploads').remove([filename]);
+      }
+    } catch (e) {
+      console.error('Failed to delete image from storage:', e);
+    }
+  }
+}

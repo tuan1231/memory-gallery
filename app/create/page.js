@@ -6,11 +6,13 @@ import { createStory } from '../actions';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import imageCompression from 'browser-image-compression';
+import { Eye, EyeSlash } from '@phosphor-icons/react';
 
 export default function CreatePage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const formRef = useRef(null);
 
@@ -129,14 +131,24 @@ export default function CreatePage() {
             <label className="block text-sm font-semibold text-foreground/80 uppercase tracking-wider" htmlFor="password">
               Secret Password
             </label>
-            <input 
-              type="password" 
-              id="password" 
-              name="password" 
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
-              placeholder="Enter the secret password to save..." 
-              required 
-            />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                id="password" 
+                name="password" 
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
+                placeholder="Enter the secret password to save..." 
+                required 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeSlash size={24} /> : <Eye size={24} />}
+              </button>
+            </div>
           </div>
 
           <button 

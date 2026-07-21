@@ -1,5 +1,6 @@
 import { getStoryById } from '../../data';
 import Link from 'next/link';
+import StoryActions from '../../components/StoryActions';
 
 export default async function StoryDetail({ params }) {
   const { id } = await params;
@@ -49,6 +50,7 @@ export default async function StoryDetail({ params }) {
           <div className="text-lg text-foreground/80 leading-relaxed whitespace-pre-wrap max-w-none">
             {story.content}
           </div>
+          <StoryActions storyId={story.id} isArchived={story.is_archived} />
         </div>
       </div>
     </div>
