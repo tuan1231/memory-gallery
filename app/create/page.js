@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createStory } from '../actions';
 import Link from 'next/link';
 import { motion } from 'motion/react';
+import imageCompression from 'browser-image-compression';
 
 export default function CreatePage() {
   const [error, setError] = useState('');
@@ -20,6 +21,25 @@ export default function CreatePage() {
 
     try {
       const formData = new FormData(formRef.current);
+      
+      const imageFile = formData.get('image');
+      if (imageFile && imageFile.size > 0) {
+        setLoading(true); // Optional: ensure loading state is maintained during compression
+        const options = {
+          maxSizeMB: 5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          fileType: 'image/jpeg',
+        };
+        const compressedBlob = await imageCompression(imageFile, options);
+        // Create a new File object from the Blob
+        const compressedFile = new File([compressedBlob], imageFile.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
+        formData.set('image', compressedFile);
+      }
+
       const newStoryId = await createStory(formData);
       router.push(`/story/${newStoryId}`);
     } catch (err) {
