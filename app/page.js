@@ -1,66 +1,38 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from 'next/link';
+import { getStories } from './actions';
+import MasonryItem from './components/MasonryItem';
+import Timeline from './components/Timeline';
 
-export default function Home() {
+export const revalidate = 0; // Ensure data is always fresh (can be optimized later)
+
+export default async function Home() {
+  const stories = await getStories();
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="w-full">
+      {stories.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">No memories yet! ✨</h2>
+          <p className="text-foreground/60 text-lg mb-8 max-w-[40ch]">
+            Start capturing your beautiful moments together. Your Pinterest-style timeline awaits.
           </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link 
+            href="/create" 
+            className="bg-foreground text-background px-8 py-4 rounded-full font-semibold hover:scale-105 active:scale-95 transition-transform shadow-lg"
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            + Add Your First Memory
+          </Link>
         </div>
-      </main>
+      ) : (
+        <>
+          <Timeline stories={stories} />
+          <div className="columns-2 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4 pb-12">
+            {stories.map(story => (
+              <MasonryItem key={story.id} story={story} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
