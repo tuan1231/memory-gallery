@@ -3,11 +3,11 @@
 import { motion } from "motion/react";
 
 export default function Timeline({ stories }) {
-  const sortedStories = [...stories].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedStories = [...stories].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   if (sortedStories.length === 0) return null;
 
-  const startDate = new Date(sortedStories[0].date);
+  const startDate = new Date(sortedStories[0].created_at);
   const now = new Date();
   const diffTime = Math.abs(now - startDate);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

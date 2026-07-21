@@ -6,13 +6,13 @@ import { useState } from "react";
 
 export default function MasonryItem({ story }) {
   const [isHovered, setIsHovered] = useState(false);
-  const date = new Date(story.date).toLocaleDateString("en-US", {
+  const date = new Date(story.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
-  const hasImage = Boolean(story.imageUrl);
+  const hasImage = Boolean(story.image_url);
 
   return (
     <Link href={`/story/${story.id}`} className="block mb-6 break-inside-avoid perspective-[1000px]">
@@ -27,7 +27,7 @@ export default function MasonryItem({ story }) {
         {hasImage ? (
           <>
             <img
-              src={story.imageUrl}
+              src={story.image_url}
               alt={story.title}
               className="w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               loading="lazy"

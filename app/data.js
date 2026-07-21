@@ -1,34 +1,30 @@
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFile = path.join(process.cwd(), 'data', 'stories.json');
-
-// Ensure directories exist
-async function init() {
-  try {
-    await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true });
-    await fs.mkdir(path.join(process.cwd(), 'public', 'uploads'), { recursive: true });
-    try {
-      await fs.access(dataFile);
-    } catch {
-      await fs.writeFile(dataFile, '[]');
-    }
-  } catch (error) {
-    console.error("Init error", error);
-  }
-}
+import { supabase } from './lib/supabase';
 
 export async function getStories() {
-  await init();
-  try {
-    const fileContents = await fs.readFile(dataFile, 'utf8');
-    return JSON.parse(fileContents);
-  } catch (error) {
+  const { data, error } = await supabase
+    .from('stories')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching stories:', error);
     return [];
   }
+
+  return data || [];
 }
 
 export async function getStoryById(id) {
-  const stories = await getStories();
-  return stories.find(s => s.id === id) || null;
+  const { data, error } = await supabase
+    .from('stories')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching story:', error);
+    return null;
+  }
+
+  return data;
 }

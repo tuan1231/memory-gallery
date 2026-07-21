@@ -19,7 +19,7 @@ export default async function StoryDetail({ params }) {
     );
   }
 
-  const date = new Date(story.date).toLocaleDateString('en-US', {
+  const date = new Date(story.created_at).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -35,7 +35,7 @@ export default async function StoryDetail({ params }) {
       <div className="bg-card-bg rounded-3xl overflow-hidden border border-border shadow-sm mb-12">
         <div className="w-full h-auto bg-black/5">
           <img 
-            src={story.imageUrl} 
+            src={story.image_url} 
             alt={story.title} 
             className="w-full h-auto object-contain max-h-[70vh]" 
           />

@@ -1,20 +1,10 @@
 "use server";
 
-import fs from 'fs/promises';
-import path from 'path';
+import { supabase } from './lib/supabase';
 import crypto from 'crypto';
-import { getStories } from './data';
-
-const dataFile = path.join(process.cwd(), 'data', 'stories.json');
-const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-
-async function ensureUploadDir() {
-  await fs.mkdir(uploadDir, { recursive: true });
-}
+import path from 'path';
 
 export async function createStory(formData) {
-  await ensureUploadDir();
-  
   const title = formData.get('title');
   const content = formData.get('content');
   const image = formData.get('image');
@@ -30,34 +20,52 @@ export async function createStory(formData) {
   }
 
   let imageUrl = '';
-  
+
   if (image && image.size > 0) {
     const bytes = await image.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
+
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(image.name) || '.jpg';
     const filename = `${uniqueSuffix}${ext}`;
-    const filepath = path.join(uploadDir, filename);
-    
-    await fs.writeFile(filepath, buffer);
-    imageUrl = `/uploads/${filename}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('uploads')
+      .upload(filename, buffer, {
+        contentType: image.type || 'image/jpeg',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error('Failed to upload image.');
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filename);
+
+    imageUrl = publicUrlData.publicUrl;
   }
 
+  const storyId = crypto.randomUUID();
 
-  const newStory = {
-    id: crypto.randomUUID(),
-    title,
-    content,
-    imageUrl,
-    date: new Date().toISOString()
-  };
+  const { error: insertError } = await supabase
+    .from('stories')
+    .insert({
+      id: storyId,
+      title,
+      content,
+      image_url: imageUrl,
+    });
 
-  const stories = await getStories();
-  stories.unshift(newStory); // Add to beginning
+  if (insertError) {
+    console.error('Insert error:', insertError);
+    throw new Error('Failed to save memory.');
+  }
 
-  await fs.writeFile(dataFile, JSON.stringify(stories, null, 2));
-
-  return newStory.id;
+  return storyId;
 }
