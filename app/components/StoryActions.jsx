@@ -24,7 +24,7 @@ export default function StoryActions({ storyId, isArchived }) {
 
   const handleConfirm = async () => {
     if (!password) {
-      setErrorMsg("Vui lòng nhập mật khẩu!");
+      setErrorMsg("Please enter your password!");
       return;
     }
 
@@ -33,21 +33,21 @@ export default function StoryActions({ storyId, isArchived }) {
     try {
       if (modalState.action === 'archive') {
         await archiveStory(storyId, password);
-        alert("Đã chuyển vào lưu trữ. Thẻ sẽ bị xóa vĩnh viễn sau 3 ngày.");
+        alert("Moved to archive. This card will be permanently deleted after 3 days.");
         router.push('/');
       } else if (modalState.action === 'restore') {
         await restoreStory(storyId, password);
-        alert("Khôi phục thành công.");
+        alert("Restored successfully.");
         router.push('/');
       } else if (modalState.action === 'delete') {
         await deleteStoryPermanently(storyId, password);
-        alert("Đã xóa vĩnh viễn.");
+        alert("Permanently deleted.");
         router.push('/archive');
       }
       router.refresh();
       closeModal();
     } catch (error) {
-      setErrorMsg(error.message || "Đã xảy ra lỗi.");
+      setErrorMsg(error.message || "An error occurred.");
     } finally {
       setLoading(false);
     }
@@ -63,14 +63,14 @@ export default function StoryActions({ storyId, isArchived }) {
               className="flex items-center gap-2 px-6 py-3 bg-foreground text-background font-bold rounded-xl hover:opacity-90 transition-opacity uppercase tracking-widest text-sm"
             >
               <ArrowUUpLeft size={20} />
-              Khôi phục
+              Restore
             </button>
             <button
               onClick={() => openModal('delete')}
               className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-sm border border-red-500/20"
             >
               <Trash size={20} />
-              Xóa Vĩnh Viễn
+              Delete Permanently
             </button>
           </div>
         ) : (
@@ -79,7 +79,7 @@ export default function StoryActions({ storyId, isArchived }) {
             className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-sm border border-red-500/20"
           >
             <Archive size={20} />
-            Xóa (Lưu trữ)
+            Archive (Delete)
           </button>
         )}
       </div>
@@ -91,24 +91,24 @@ export default function StoryActions({ storyId, isArchived }) {
               <X size={24} />
             </button>
             
-            <h3 className="text-2xl font-bold mb-2">Xác nhận hành động</h3>
+            <h3 className="text-2xl font-bold mb-2">Confirm Action</h3>
             <p className="text-foreground/70 mb-6">
-              {modalState.action === 'archive' && "Bạn có chắc muốn xóa thẻ này vào kho lưu trữ?"}
-              {modalState.action === 'restore' && "Bạn có muốn khôi phục thẻ này về trang chủ?"}
-              {modalState.action === 'delete' && "Hành động này không thể hoàn tác. Bạn chắc chứ?"}
+              {modalState.action === 'archive' && "Are you sure you want to move this card to the archive?"}
+              {modalState.action === 'restore' && "Do you want to restore this card back to the gallery?"}
+              {modalState.action === 'delete' && "This action cannot be undone. Are you sure?"}
             </p>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-foreground/80 uppercase tracking-wider mb-2">
-                  Mật khẩu bí mật
+                  Secret Password
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="Nhập mật khẩu..."
+                  placeholder="Enter password..."
                   autoFocus
                 />
               </div>
@@ -124,7 +124,7 @@ export default function StoryActions({ storyId, isArchived }) {
                 disabled={loading}
                 className="w-full bg-foreground text-background font-bold tracking-widest uppercase rounded-xl px-4 py-4 mt-4 hover:opacity-90 transition-all disabled:opacity-50"
               >
-                {loading ? "Đang xử lý..." : "Xác nhận"}
+                {loading ? "Processing..." : "Confirm"}
               </button>
             </div>
           </div>
