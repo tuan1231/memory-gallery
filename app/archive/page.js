@@ -11,7 +11,7 @@ export default async function ArchivePage() {
     <div className="w-full">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-bold tracking-tighter mb-2">Archive 🗑️</h2>
+          <h2 className="text-3xl font-bold tracking-tighter mb-2">Archive</h2>
           <p className="text-foreground/60">Items here will be automatically deleted after 3 days.</p>
         </div>
         <Link 

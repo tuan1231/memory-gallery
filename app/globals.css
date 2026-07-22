@@ -10,19 +10,19 @@
 }
 
 :root {
-  --background: #FFE2E2;
-  --foreground: #331f24; /* A dark color for text to ensure readability on FFE2E2 */
-  --accent: #FF80C7;
-  --card-bg: #F5CBCB;
-  --border: #C5B3D3;
+  --background: #FFF5F2; /* Very light creamy peach */
+  --foreground: #2D1B19; /* Deep warm brown/black */
+  --accent: #F4978E; /* Solid Peach Pink */
+  --card-bg: #FFFFFF;
+  --border: #FCD5CE; /* Soft peach border */
 }
 
 :root.dark {
-  --background: #3A0519;
-  --foreground: #EF88AD;
-  --accent: #EF88AD;
-  --card-bg: #670D2F;
-  --border: #A53860;
+  --background: #1A1110;
+  --foreground: #FCEEEB;
+  --accent: #FFB5A7;
+  --card-bg: #2A1D1C;
+  --border: #3D2B29;
 }
 
 body {
@@ -33,13 +33,13 @@ body {
 }
 
 ::selection {
-  background-color: var(--foreground);
-  color: var(--background);
+  background-color: var(--accent);
+  color: #fff;
 }
 
 /* Custom scrollbar for a premium feel */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -49,5 +49,5 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--foreground);
 }

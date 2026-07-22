@@ -15,10 +15,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${outfit.variable} antialiased`}>
-      <body className="bg-background text-foreground font-sans min-h-[100dvh] flex flex-col selection:bg-foreground selection:text-background transition-colors duration-300">
+    <html lang="en" className={`${outfit.variable} antialiased`} suppressHydrationWarning>
+      <body className="bg-background text-foreground font-sans min-h-[100dvh] flex flex-col transition-colors duration-300">
         <Navbar />
-        <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           {children}
         </main>
       </body>
