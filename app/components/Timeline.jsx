@@ -7,15 +7,20 @@ import { motion } from "motion/react";
 export default function Timeline({ stories }) {
   const containerRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [diffDays, setDiffDays] = useState(0);
   
   const sortedStories = [...stories].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-  if (sortedStories.length === 0) return null;
+  useEffect(() => {
+    if (sortedStories.length > 0) {
+      const startDate = new Date(sortedStories[0].created_at);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - startDate.getTime());
+      setDiffDays(Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))));
+    }
+  }, [sortedStories]);
 
-  const startDate = new Date(sortedStories[0].created_at);
-  const now = new Date();
-  const diffTime = Math.abs(now - startDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (sortedStories.length === 0) return null;
 
   useEffect(() => {
     const handleMouseMove = (e) => {
