@@ -158,3 +158,53 @@ export async function deleteStoryPermanently(id, password) {
     }
   }
 }
+
+export async function addMapPlace(data, password) {
+  if (password !== 'iloveyou') {
+    throw new Error('Incorrect password!');
+  }
+
+  const { name, address, notes, lat, lng } = data;
+
+  if (!name || !address || typeof lat !== 'number' || typeof lng !== 'number') {
+    throw new Error('Please provide all required fields!');
+  }
+
+  const { error } = await supabase
+    .from('love_map_places')
+    .insert({
+      name,
+      address,
+      notes,
+      lat,
+      lng
+    });
+
+  if (error) {
+    console.error('Insert error:', error);
+    throw new Error('Failed to save map place.');
+  }
+
+  return true;
+}
+
+export async function deleteMapPlace(id, password) {
+  if (password !== 'iloveyou') {
+    throw new Error('Incorrect password!');
+  }
+
+  const { data, error } = await supabase
+    .from('love_map_places')
+    .delete()
+    .eq('id', id)
+    .select();
+
+  if (error) {
+    console.error('Error deleting place:', error);
+    throw new Error('Failed to delete map place.');
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Xóa thất bại! Bảng "love_map_places" đang bị chặn quyền DELETE bởi RLS trên Supabase.');
+  }
+}

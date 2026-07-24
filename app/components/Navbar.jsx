@@ -46,6 +46,12 @@ export default function Navbar() {
             {mounted && (theme === 'light' ? <Moon size={20} weight="bold" /> : <Sun size={20} weight="bold" />)}
           </button>
           <Link 
+            href="/map" 
+            className="font-medium text-foreground/70 hover:text-foreground transition-colors uppercase tracking-[0.1em] text-xs md:text-sm"
+          >
+            Map
+          </Link>
+          <Link 
             href="/archive" 
             className="font-medium text-foreground/70 hover:text-foreground transition-colors uppercase tracking-[0.1em] text-xs md:text-sm"
           >

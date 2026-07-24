@@ -82,3 +82,17 @@ export async function getStoryById(id) {
 
   return data;
 }
+
+export async function getMapPlaces() {
+  const { data, error } = await supabase
+    .from('love_map_places')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching map places:', error);
+    return [];
+  }
+
+  return data || [];
+}
