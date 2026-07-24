@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getArchivedStories } from '../data';
+import { getArchivedStories } from '../lib/data';
 import MasonryItem from '../components/MasonryItem';
 import ScrollRevealGrid from '../components/ScrollRevealGrid';
 

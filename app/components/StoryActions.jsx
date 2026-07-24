@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { archiveStory, deleteStoryPermanently, restoreStory } from '../actions';
+import { archiveStory, deleteStoryPermanently, restoreStory } from '../lib/actions';
 import { Trash, Archive, ArrowUUpLeft, X } from '@phosphor-icons/react';
 
 export default function StoryActions({ storyId, isArchived }) {

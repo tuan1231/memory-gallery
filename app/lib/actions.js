@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from './lib/supabase';
+import { supabase } from './supabase';
 import crypto from 'crypto';
 import path from 'path';
 

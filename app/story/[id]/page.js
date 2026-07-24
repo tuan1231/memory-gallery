@@ -1,4 +1,4 @@
-import { getStoryById, getStories } from '../../data';
+import { getStoryById, getStories } from '../../lib/data';
 import Link from 'next/link';
 import StoryActions from '../../components/StoryActions';
 import MasonryItem from '../../components/MasonryItem';

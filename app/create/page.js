@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createStory } from '../actions';
+import { createStory } from '../lib/actions';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import imageCompression from 'browser-image-compression';

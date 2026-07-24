@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getStories } from './data';
+import { getStories } from './lib/data';
 import MasonryItem from './components/MasonryItem';
 import Timeline from './components/Timeline';
 import ScrollRevealGrid from './components/ScrollRevealGrid';
