@@ -1,77 +1,34 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import Map, { Marker, Popup } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { addMapPlace, deleteMapPlace } from '../lib/actions';
 import { useRouter } from 'next/navigation';
 import { X, MapPin, MagnifyingGlass, Crosshair, Trash } from '@phosphor-icons/react';
 
-// Fix for default marker icons in Next.js
-const customIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// A green icon for user's current location
-const userIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-
-function MapClickHandler({ setNewMarkerPos, setIsAdding, setSelectedPlace, setSelectedAddress }) {
-  useMapEvents({
-    async click(e) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
-      setNewMarkerPos({ lat, lng });
-      setIsAdding(true);
-      setSelectedPlace(null);
-      
-      if (setSelectedAddress) {
-        setSelectedAddress('Đang tải địa chỉ...');
-        try {
-          const res = await fetch(`https://api.mapbox.com/search/geocode/v6/reverse?longitude=${lng}&latitude=${lat}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&language=vi`);
-          const data = await res.json();
-          if (data && data.features && data.features.length > 0) {
-            const f = data.features[0];
-            setSelectedAddress(f.properties.full_address || `${f.properties.name}, ${f.properties.place_formatted}`);
-          } else {
-            setSelectedAddress('');
-          }
-        } catch (error) {
-          console.error("Reverse geocoding error:", error);
-          setSelectedAddress('');
-        }
-      }
-    },
-  });
-  return null;
-}
-
-function SearchOverlay({ onSelectResult }) {
+function SearchOverlay({ onSelectResult, userLocation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const skipSearchRef = useRef(false);
+
+  const doGogodukSuggest = async (query, signal) => {
+    const url = `/api/gogoduk?action=suggest&input=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { signal });
+    if (res.status === 401) {
+      throw new Error("Unauthorized. Please check your GoGoDuk API Key.");
+    }
+    const data = await res.json();
+    return data;
+  };
 
   // Debounced search for suggestions as user types
   useEffect(() => {
     const controller = new AbortController();
 
     const timer = setTimeout(async () => {
-      if (!searchQuery.trim() || searchQuery.length < 3) {
+      if (!searchQuery.trim() || searchQuery.length < 2) {
         setSearchResults([]);
         return;
       }
@@ -83,17 +40,12 @@ function SearchOverlay({ onSelectResult }) {
       
       setIsSearching(true);
       try {
-        const res = await fetch(
-          `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(searchQuery)}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=vn&language=vi&limit=5`,
-          { signal: controller.signal }
-        );
-        const data = await res.json();
-        if (data && data.features) {
-          const mappedResults = data.features.map(f => ({
-            place_id: f.id,
-            lat: f.geometry.coordinates[1],
-            lon: f.geometry.coordinates[0],
-            display_name: f.properties.full_address || `${f.properties.name}, ${f.properties.place_formatted}`
+        const data = await doGogodukSuggest(searchQuery, controller.signal);
+        
+        if (data && data.predictions) {
+          const mappedResults = data.predictions.map(p => ({
+            place_id: p.placeId,
+            display_name: p.text
           }));
           setSearchResults(mappedResults);
         } else {
@@ -106,13 +58,13 @@ function SearchOverlay({ onSelectResult }) {
       } finally {
         setIsSearching(false);
       }
-    }, 400); // Reduced debounce time for faster search
+    }, 400);
 
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [searchQuery]);
+  }, [searchQuery, userLocation]);
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
@@ -120,17 +72,17 @@ function SearchOverlay({ onSelectResult }) {
     
     setIsSearching(true);
     setSearchResults([]); 
+    
     try {
-      const res = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(searchQuery)}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=vn&language=vi&limit=1`);
-      const data = await res.json();
-      if (data && data.features && data.features.length > 0) {
-        const f = data.features[0];
+      const data = await doGogodukSuggest(searchQuery);
+      if (data && data.predictions && data.predictions.length > 0) {
+        const p = data.predictions[0];
         handleSelectSearchResult({
-          place_id: f.id,
-          lat: f.geometry.coordinates[1],
-          lon: f.geometry.coordinates[0],
-          display_name: f.properties.full_address || `${f.properties.name}, ${f.properties.place_formatted}`
+          place_id: p.placeId,
+          display_name: p.text
         });
+      } else {
+        alert("Không tìm thấy địa điểm này. Vui lòng thử từ khóa khác.");
       }
     } catch (err) {
       console.error("Search submit error:", err);
@@ -139,11 +91,35 @@ function SearchOverlay({ onSelectResult }) {
     }
   };
 
-  const handleSelectSearchResult = (result) => {
+  const handleSelectSearchResult = async (result) => {
     setSearchResults([]);
     skipSearchRef.current = true;
     setSearchQuery(result.display_name);
-    onSelectResult(result);
+    
+    let finalResult = { ...result };
+    
+    if (!finalResult.lat || !finalResult.lon) {
+      try {
+        const res = await fetch(`/api/gogoduk?action=resolve&id=${finalResult.place_id}`);
+        const data = await res.json();
+        if (data && data.result) {
+          finalResult.lat = data.result.lat;
+          finalResult.lon = data.result.lon;
+          if (data.result.address) {
+            finalResult.display_name = data.result.address;
+            setSearchQuery(finalResult.display_name);
+          }
+        }
+      } catch (err) {
+        console.error("Resolve error:", err);
+      }
+    }
+    
+    if (finalResult.lat && finalResult.lon) {
+      onSelectResult(finalResult);
+    } else {
+      alert("Không thể lấy toạ độ cho địa điểm này.");
+    }
   };
 
   return (
@@ -181,20 +157,7 @@ function SearchOverlay({ onSelectResult }) {
   );
 }
 
-function MapController({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, zoom || map.getZoom(), {
-        animate: true,
-        duration: 1.5
-      });
-    }
-  }, [center, map, zoom]);
-  return null;
-}
-
-const defaultCenter = [21.028511, 105.804817]; // Hanoi
+const defaultCenter = [21.028511, 105.804817]; // Hanoi [lat, lng]
 
 export default function MapComponent({ places = [] }) {
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -209,6 +172,7 @@ export default function MapComponent({ places = [] }) {
   
   const router = useRouter();
   const formRef = useRef(null);
+  const mapRef = useRef(null);
 
   // Get User Location on Mount
   useEffect(() => {
@@ -217,7 +181,8 @@ export default function MapComponent({ places = [] }) {
         (position) => {
           const loc = [position.coords.latitude, position.coords.longitude];
           setUserLocation(loc);
-          setMapCenter(loc); // Automatically center map to user location
+          setMapCenter(loc);
+          flyToLocation(loc);
         },
         (error) => {
           console.error("Error getting location:", error);
@@ -225,19 +190,56 @@ export default function MapComponent({ places = [] }) {
       );
     }
   }, []);
+  
+  const flyToLocation = (loc, zoom = 15) => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [loc[1], loc[0]], // [lng, lat]
+        zoom: zoom,
+        duration: 1500
+      });
+    }
+  };
 
   const handleLocateMe = () => {
     if (userLocation) {
-      setMapCenter([...userLocation]); // Force new reference
+      setMapCenter([...userLocation]);
+      flyToLocation(userLocation);
     }
   };
 
   const handleSelectSearchResult = (result) => {
     const loc = [parseFloat(result.lat), parseFloat(result.lon)];
-    setMapCenter([...loc]); // Force re-render for MapController
+    setMapCenter([...loc]);
+    flyToLocation(loc);
     setNewMarkerPos({ lat: loc[0], lng: loc[1] });
     setIsAdding(true);
     setSelectedAddress(result.display_name); // Fill input with full address
+    setSelectedPlace(null);
+  };
+  
+  const handleMapClick = async (e) => {
+    const { lng, lat } = e.lngLat;
+    setNewMarkerPos({ lat, lng });
+    setIsAdding(true);
+    setSelectedPlace(null);
+    
+    if (setSelectedAddress) {
+      setSelectedAddress('Đang tải địa chỉ...');
+      try {
+        const res = await fetch(`/api/gogoduk?action=reverse&lat=${lat}&lon=${lng}`);
+        const data = await res.json();
+        if (data && data.results && data.results.length > 0) {
+          const f = data.results[0];
+          setSelectedAddress(f.address);
+        } else {
+          setSelectedAddress('');
+        }
+      } catch (error) {
+        console.error("Reverse geocoding error:", error);
+        setSelectedAddress('');
+      }
+    }
   };
 
   const handleSavePlace = async (e) => {
@@ -275,6 +277,7 @@ export default function MapComponent({ places = [] }) {
     
     try {
       await deleteMapPlace(id, password);
+      setSelectedPlace(null); // Close popup
       router.refresh();
     } catch (err) {
       alert(err.message);
@@ -285,7 +288,7 @@ export default function MapComponent({ places = [] }) {
     <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-border/50 z-0 flex flex-col md:block">
       
       {/* Search Bar Overlay */}
-      <SearchOverlay onSelectResult={handleSelectSearchResult} />
+      <SearchOverlay onSelectResult={handleSelectSearchResult} userLocation={userLocation} />
       
       {/* Locate Me Button */}
       {userLocation && (
@@ -298,77 +301,109 @@ export default function MapComponent({ places = [] }) {
         </button>
       )}
 
-      <MapContainer 
-        center={mapCenter} 
-        zoom={13} 
-        scrollWheelZoom={true} 
-        style={{ height: '100%', width: '100%' }}
-        className="z-0"
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: mapCenter[1],
+          latitude: mapCenter[0],
+          zoom: 13
+        }}
+        style={{width: '100%', height: '100%'}}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        onClick={handleMapClick}
       >
-        <MapController center={mapCenter} zoom={15} />
-        
-        <TileLayer
-          attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
-          url={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
-        />
-        
-        <MapClickHandler 
-          setNewMarkerPos={setNewMarkerPos} 
-          setIsAdding={setIsAdding} 
-          setSelectedPlace={setSelectedPlace} 
-          setSelectedAddress={setSelectedAddress}
-        />
-
         {places.map((place) => (
           <Marker 
             key={place.id} 
-            position={[place.lat, place.lng]} 
-            icon={customIcon}
-            eventHandlers={{
-              click: () => {
-                setSelectedPlace(place);
-                setIsAdding(false);
-                setNewMarkerPos(null);
-              },
+            longitude={place.lng} 
+            latitude={place.lat} 
+            anchor="bottom"
+            onClick={e => {
+              e.originalEvent.stopPropagation();
+              setSelectedPlace(place);
+              setIsAdding(false);
+              setNewMarkerPos(null);
             }}
           >
-            <Popup>
-              <div className="text-black max-w-[200px]">
-                <h3 className="font-bold text-[16px] mb-1 m-0 p-0 leading-tight">{place.name}</h3>
-                <p className="text-[13px] mb-2 flex items-start gap-1 text-gray-700 m-0 p-0 leading-tight mt-1">
-                  <MapPin size={14} className="mt-0.5 shrink-0" />
-                  {place.address}
-                </p>
-                {place.notes && (
-                  <div className="bg-gray-100 p-2 rounded text-[13px] italic text-gray-800 break-words mt-2">
-                    {place.notes}
-                  </div>
-                )}
-                <div className="mt-3 pt-2 border-t border-gray-200/60 flex justify-end">
-                  <button 
-                    onClick={() => handleDeletePlace(place.id)}
-                    className="text-[11px] text-red-500/70 hover:text-red-600 font-medium flex items-center gap-1 transition-colors"
-                  >
-                    <Trash size={12} /> Xóa
-                  </button>
-                </div>
-              </div>
-            </Popup>
+            <div className="text-accent hover:text-accent/80 cursor-pointer drop-shadow-md transition-transform hover:scale-110">
+              <MapPin size={36} weight="fill" />
+            </div>
           </Marker>
         ))}
 
+        {selectedPlace && (
+          <Popup
+            longitude={selectedPlace.lng}
+            latitude={selectedPlace.lat}
+            anchor="bottom"
+            onClose={() => setSelectedPlace(null)}
+            closeOnClick={false}
+            offset={[0, -40]}
+            className="z-50 custom-popup"
+            closeButton={false}
+          >
+            <div className="bg-card-bg/95 backdrop-blur-xl border border-border/80 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl w-[280px] p-5 flex flex-col overflow-hidden relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setSelectedPlace(null); }}
+                className="absolute top-3 right-3 text-foreground/40 hover:text-foreground transition-all p-1.5 rounded-full hover:bg-foreground/5"
+              >
+                <X size={16} weight="bold" />
+              </button>
+              
+              <h3 className="font-bold text-lg mb-2 text-foreground pr-8 leading-tight tracking-tight">{selectedPlace.name}</h3>
+              
+              <p className="text-sm mb-4 flex items-start gap-2 text-foreground/70 leading-relaxed">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-accent" weight="fill" />
+                <span className="line-clamp-2">{selectedPlace.address}</span>
+              </p>
+              
+              {selectedPlace.notes && (
+                <div className="bg-foreground/5 border border-border/50 p-3.5 rounded-xl text-sm text-foreground/80 break-words mb-4 shadow-inner">
+                  {selectedPlace.notes}
+                </div>
+              )}
+              
+              <div className="pt-3 border-t border-border/40 flex justify-end mt-auto">
+                <button 
+                  onClick={() => handleDeletePlace(selectedPlace.id)}
+                  className="text-xs text-red-500/80 hover:text-red-600 font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-lg hover:bg-red-500/10 active:scale-95"
+                >
+                  <Trash size={14} weight="bold" /> Xóa
+                </button>
+              </div>
+            </div>
+            <style>{`
+              .custom-popup .mapboxgl-popup-content {
+                padding: 0;
+                background: transparent;
+                box-shadow: none;
+                border-radius: 16px;
+              }
+              .custom-popup .mapboxgl-popup-tip {
+                display: none;
+              }
+            `}</style>
+          </Popup>
+        )}
+
         {userLocation && (
-          <Marker position={userLocation} icon={userIcon}>
-            <Popup>
-              <div className="font-bold text-center">Bạn đang ở đây!</div>
-            </Popup>
+          <Marker longitude={userLocation[1]} latitude={userLocation[0]} anchor="center">
+            <div className="relative flex h-5 w-5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-white shadow-lg"></span>
+            </div>
           </Marker>
         )}
 
         {newMarkerPos && (
-          <Marker position={[newMarkerPos.lat, newMarkerPos.lng]} icon={customIcon} />
+          <Marker longitude={newMarkerPos.lng} latitude={newMarkerPos.lat} anchor="bottom">
+            <div className="text-red-500 drop-shadow-md animate-bounce">
+              <MapPin size={36} weight="fill" />
+            </div>
+          </Marker>
         )}
-      </MapContainer>
+      </Map>
 
       {/* Add Place Overlay Modal */}
       {isAdding && newMarkerPos && (
