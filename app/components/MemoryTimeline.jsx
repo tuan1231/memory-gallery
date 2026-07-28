@@ -257,6 +257,36 @@ export default function MemoryTimeline({ stories }) {
     return result;
   }, [stories]);
 
+  const curveParams = useMemo(() => {
+    const params = [];
+    
+    // Calculate offsets (startX) for all nodes
+    const dxs = nodes.map((node, i) => {
+      // amplitude max ~35px offset
+      const amplitude = node.type === 'month' ? 15 : 35;
+      return Math.sin(i * 1.4) * amplitude;
+    });
+    
+    let prevCx2 = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      const startX = dxs[i];
+      const endX = i < nodes.length - 1 ? dxs[i+1] : 0;
+      
+      // Ensure C1 continuity: next curve's first control point is a reflection 
+      // of previous curve's second control point across the joining dot.
+      const cx1 = i === 0 ? startX : 2 * startX - prevCx2;
+      
+      // Randomish but bounded cx2
+      let cx2 = endX + Math.cos(i * 0.9) * 45;
+      if (cx2 > 45) cx2 = 45;
+      if (cx2 < -45) cx2 = -45;
+      
+      params.push({ startX, endX, cx1, cx2 });
+      prevCx2 = cx2;
+    }
+    return params;
+  }, [nodes]);
+
   const selectedNode = useMemo(() => {
     return nodes.find(n => n.id === selectedDayId && n.type === 'day');
   }, [nodes, selectedDayId]);
@@ -297,11 +327,9 @@ export default function MemoryTimeline({ stories }) {
   return (
     <div className="w-full max-w-5xl mx-auto pb-32 px-4 sm:px-8 relative">
       
-      {/* Central Spine */}
-      <div className="absolute top-0 bottom-0 w-0 border-l-[2px] border-dashed border-border/40 left-[28px] md:left-1/2 md:-translate-x-1/2"></div>
-      
-      <div className="flex flex-col gap-8 md:gap-16 pt-8">
+      <div className="flex flex-col gap-8 md:gap-16 pt-8 relative z-10">
         {nodes.map((node, i) => {
+          const params = curveParams[i];
           
           if (node.type === 'month') {
             return (
@@ -311,9 +339,28 @@ export default function MemoryTimeline({ stories }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6 }}
-                className="relative w-full py-8 my-4"
+                className="relative w-full h-24 flex items-center justify-center my-4"
               >
-                <div className="absolute left-[28px] md:left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-md border border-border px-6 py-2.5 rounded-full shadow-sm text-xs font-bold tracking-[0.2em] uppercase text-foreground whitespace-nowrap">
+                {/* Wavy line down to next element */}
+                <svg 
+                  className="absolute top-12 left-[28px] md:left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+2rem)] md:h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
+                  viewBox="-50 0 100 100" 
+                  preserveAspectRatio="none"
+                >
+                  <path 
+                    d={`M ${params.startX} 0 C ${params.cx1} 33, ${params.cx2} 66, ${params.endX} 100`} 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    fill="transparent" 
+                    strokeDasharray="5 5"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+
+                <div 
+                  className="absolute left-[28px] md:left-1/2 top-12 z-10 bg-background/80 backdrop-blur-md border border-border px-6 py-2.5 rounded-full shadow-sm text-xs font-bold tracking-[0.2em] uppercase text-foreground whitespace-nowrap"
+                  style={{ transform: `translate(calc(-50% + ${params.startX}px), -50%)` }}
+                >
                   {node.label}
                 </div>
               </motion.div>
@@ -331,19 +378,41 @@ export default function MemoryTimeline({ stories }) {
               transition={{ duration: 0.7, ease: "easeOut" }}
               className="relative w-full group flex"
             >
+              {/* Wavy line down to next element */}
+              <svg 
+                className="absolute top-12 left-[28px] md:left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+2rem)] md:h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
+                viewBox="-50 0 100 100" 
+                preserveAspectRatio="none"
+              >
+                <path 
+                  d={`M ${params.startX} 0 C ${params.cx1} 33, ${params.cx2} 66, ${params.endX} 100`} 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  fill="transparent" 
+                  strokeDasharray="5 5"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+
               {/* Timeline Dot */}
-              <div className="absolute left-[28px] md:left-1/2 w-[14px] h-[14px] rounded-full border-[3px] border-background bg-foreground -translate-x-1/2 top-12 md:top-1/2 md:-translate-y-1/2 z-10 shadow-sm transition-transform duration-300 group-hover:scale-[1.4] group-hover:bg-accent"></div>
+              <div 
+                className="absolute top-12 left-[28px] md:left-1/2 w-[14px] h-[14px] rounded-full border-[3px] border-background bg-foreground z-10 shadow-sm transition-transform duration-300 group-hover:scale-[1.4] group-hover:bg-accent"
+                style={{ transform: `translate(calc(-50% + ${params.startX}px), -50%)` }}
+              ></div>
               
               {/* Connector Line (Desktop only) */}
               <div 
-                className={`hidden md:block absolute top-1/2 -translate-y-1/2 h-0 border-t-[2px] border-dashed border-border/40 transition-all duration-500 group-hover:border-accent/60 w-8 lg:w-16 ${
-                  isLeft ? 'right-[calc(50%+7px)]' : 'left-[calc(50%+7px)]'
-                }`}
+                className={`hidden md:block absolute top-12 h-0 border-t-[2px] border-dashed border-border/40 transition-all duration-500 group-hover:border-accent/60 z-0`}
+                style={{
+                  right: isLeft ? `calc(50% - ${params.startX}px)` : 'auto',
+                  left: isLeft ? 'auto' : `calc(50% + ${params.startX}px)`,
+                  width: `calc(40px + ${isLeft ? params.startX : -params.startX}px)`,
+                }}
               ></div>
               
               {/* Card Container */}
               <div 
-                className={`w-[calc(100%-3rem)] ml-16 md:w-[calc(50%-2.5rem-2rem)] lg:md:w-[calc(50%-2.5rem-4rem)] ${
+                className={`relative z-20 w-[calc(100%-3rem)] ml-16 md:w-[calc(50%-2.5rem-2rem)] lg:md:w-[calc(50%-2.5rem-4rem)] ${
                   isLeft ? 'md:ml-0 md:mr-auto' : 'md:ml-auto md:mr-0'
                 }`}
               >
@@ -367,10 +436,13 @@ export default function MemoryTimeline({ stories }) {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="relative w-full py-16 flex justify-start md:justify-center"
+        className="relative w-full h-32 flex justify-start md:justify-center mt-8 md:mt-16"
       >
-        <div className="absolute left-[28px] md:left-1/2 w-3 h-3 rounded-full border-[2px] border-border bg-transparent -translate-x-1/2 top-1/2 -translate-y-1/2 z-10"></div>
-        <div className="pl-16 md:pl-0 text-foreground/40 text-xs font-bold tracking-[0.2em] uppercase mt-12 md:mt-16 text-center w-full">
+        <div 
+          className="absolute left-[28px] md:left-1/2 w-3 h-3 rounded-full border-[2px] border-border bg-transparent top-12 z-10"
+          style={{ transform: `translate(-50%, -50%)` }}
+        ></div>
+        <div className="pl-16 md:pl-0 text-foreground/40 text-xs font-bold tracking-[0.2em] uppercase mt-12 text-center w-full">
           The journey continues...
         </div>
       </motion.div>
