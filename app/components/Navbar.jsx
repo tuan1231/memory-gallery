@@ -52,6 +52,12 @@ export default function Navbar() {
             Map
           </Link>
           <Link 
+            href="/timeline" 
+            className="font-medium text-foreground/70 hover:text-foreground transition-colors uppercase tracking-[0.1em] text-xs md:text-sm"
+          >
+            Timeline
+          </Link>
+          <Link 
             href="/archive" 
             className="font-medium text-foreground/70 hover:text-foreground transition-colors uppercase tracking-[0.1em] text-xs md:text-sm"
           >
