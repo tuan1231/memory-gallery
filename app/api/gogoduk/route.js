@@ -16,32 +16,33 @@ export async function GET(request) {
   }
 
   try {
+    const handleFetch = async (url) => {
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`Gogoduk API Error (${res.status}):`, text);
+        throw new Error(`Gogoduk API Error: ${res.status}`);
+      }
+      return await res.json();
+    };
+
     if (action === 'suggest') {
       const input = searchParams.get('input');
-      const res = await fetch(`https://api.gogoduk.com/v1/suggest?input=${encodeURIComponent(input)}&lang=vi`, {
-        headers
-      });
-      const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
+      const data = await handleFetch(`https://api.gogoduk.com/v1/suggest?input=${encodeURIComponent(input)}&lang=vi`);
+      return NextResponse.json(data);
     }
     
     if (action === 'resolve') {
       const id = searchParams.get('id');
-      const res = await fetch(`https://api.gogoduk.com/v1/place/resolve?id=${id}&lang=vi`, {
-        headers
-      });
-      const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
+      const data = await handleFetch(`https://api.gogoduk.com/v1/place/resolve?id=${id}&lang=vi`);
+      return NextResponse.json(data);
     }
     
     if (action === 'reverse') {
       const lat = searchParams.get('lat');
       const lon = searchParams.get('lon');
-      const res = await fetch(`https://api.gogoduk.com/v1/reverse?point.lat=${lat}&point.lon=${lon}&lang=vi`, {
-        headers
-      });
-      const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
+      const data = await handleFetch(`https://api.gogoduk.com/v1/reverse?point.lat=${lat}&point.lon=${lon}&lang=vi`);
+      return NextResponse.json(data);
     }
     
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
