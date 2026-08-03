@@ -426,13 +426,13 @@ export default function MemoryTimeline({ stories }) {
             onClick={() => setViewMode('timeline')}
             className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${viewMode === 'timeline' ? 'bg-foreground text-background shadow-md' : 'text-foreground/60 hover:text-foreground'}`}
           >
-            Hành Trình
+            Journey
           </button>
           <button 
             onClick={() => setViewMode('calendar')}
             className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${viewMode === 'calendar' ? 'bg-foreground text-background shadow-md' : 'text-foreground/60 hover:text-foreground'}`}
           >
-            Lịch Ký Ức
+            Calendar
           </button>
         </div>
       </div>
