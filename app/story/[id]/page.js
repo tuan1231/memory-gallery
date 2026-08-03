@@ -1,13 +1,17 @@
-import { getStoryById, getStories } from '../../lib/data';
+import { getStoryById, getStories, getCommentsByStoryId } from '../../lib/data';
 import Link from 'next/link';
 import StoryActions from '../../components/StoryActions';
 import MasonryItem from '../../components/MasonryItem';
 import ScrollRevealGrid from '../../components/ScrollRevealGrid';
+import Image from 'next/image';
+import DownloadButton from '../../components/DownloadButton';
+import CommentSection from '../../components/CommentSection';
 
 export default async function StoryDetail({ params }) {
   const { id } = await params;
   const story = await getStoryById(id);
   const allStories = await getStories();
+  const comments = await getCommentsByStoryId(id);
 
   if (!story) {
     return (
@@ -31,6 +35,7 @@ export default async function StoryDetail({ params }) {
   });
 
   const otherStories = allStories.filter(s => s.id !== story.id).slice(0, 4);
+  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
 
   return (
     <div className="max-w-7xl mx-auto py-8 md:py-12 px-4 relative z-10">
@@ -45,12 +50,26 @@ export default async function StoryDetail({ params }) {
         <div className="lg:sticky lg:top-24 w-full">
           {story.image_url ? (
              <div className="bg-card-bg/50 backdrop-blur-md rounded-3xl overflow-hidden border border-border/50 shadow-xl w-full aspect-[4/5] relative flex items-center justify-center group">
-               <img 
-                 src={story.image_url} 
-                 alt={story.title} 
-                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
-               />
-               <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+               {isVideo ? (
+                 <video 
+                   src={story.image_url} 
+                   controls 
+                   playsInline
+                   className="absolute inset-0 w-full h-full object-cover bg-black" 
+                 />
+               ) : (
+                 <>
+                   <Image
+                     src={story.image_url} 
+                     alt={story.title} 
+                     fill
+                     sizes="(max-width: 1024px) 100vw, 50vw"
+                     quality={90}
+                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
+                   />
+                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                 </>
+               )}
              </div>
           ) : (
             <div className="bg-card-bg/50 backdrop-blur-md rounded-3xl overflow-hidden border border-border/50 shadow-xl w-full aspect-square flex items-center justify-center p-12">
@@ -72,9 +91,12 @@ export default async function StoryDetail({ params }) {
             {story.content}
           </div>
           
-          <div className="mt-16 pt-8 border-t border-border/50">
+          <div className="mt-12 pt-8 border-t border-border/50 flex flex-wrap items-center gap-3">
+            {story.image_url && <DownloadButton url={story.image_url} title={story.title} />}
             <StoryActions storyId={story.id} isArchived={story.is_archived} />
           </div>
+
+          <CommentSection storyId={story.id} initialComments={comments} />
         </div>
       </div>
 

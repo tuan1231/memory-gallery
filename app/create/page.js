@@ -27,18 +27,20 @@ export default function CreatePage() {
       
       const imageFile = formData.get('image');
       if (imageFile && imageFile.size > 0) {
-        const options = {
-          maxSizeMB: 5,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-          fileType: 'image/jpeg',
-        };
-        const compressedBlob = await imageCompression(imageFile, options);
-        const compressedFile = new File([compressedBlob], imageFile.name, {
-          type: 'image/jpeg',
-          lastModified: Date.now(),
-        });
-        formData.set('image', compressedFile);
+        if (imageFile.type.startsWith('image/')) {
+          const options = {
+            maxSizeMB: 5,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            fileType: 'image/jpeg',
+          };
+          const compressedBlob = await imageCompression(imageFile, options);
+          const compressedFile = new File([compressedBlob], imageFile.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          formData.set('image', compressedFile);
+        }
       }
 
       const newStoryId = await createStory(formData);
@@ -51,8 +53,37 @@ export default function CreatePage() {
   };
 
   const handleFileChange = (e) => {
+    setError('');
     const file = e.target.files[0];
-    if (file) setFileName(file.name);
+    if (!file) {
+      setFileName('');
+      return;
+    }
+    
+    if (file.size > 20 * 1024 * 1024) {
+      setError('File quá lớn. Vui lòng chọn file dưới 20MB.');
+      e.target.value = '';
+      setFileName('');
+      return;
+    }
+
+    if (file.type.startsWith('video/')) {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        if (video.duration > 10) {
+          setError('Video quá dài. Vui lòng chọn video dưới 10 giây.');
+          e.target.value = '';
+          setFileName('');
+        } else {
+          setFileName(file.name);
+        }
+      };
+      video.src = URL.createObjectURL(file);
+    } else {
+      setFileName(file.name);
+    }
   };
 
   return (
@@ -70,7 +101,7 @@ export default function CreatePage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card-bg/90 backdrop-blur-xl border border-border/60 rounded-3xl p-8 md:p-12 shadow-2xl relative z-10"
+          className="bg-card-bg/90 backdrop-blur-xl border border-border/60 rounded-3xl p-6 md:p-12 shadow-2xl relative z-10"
         >
           <div className="mb-10 text-center mt-4">
             <h1 className="text-3xl font-bold tracking-widest uppercase text-foreground mb-2">New Memory</h1>
@@ -92,7 +123,7 @@ export default function CreatePage() {
                 type="text" 
                 id="title" 
                 name="title" 
-                className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
+                className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 md:py-4 text-base focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
                 placeholder="e.g. Unforgettable trip to Paris..." 
                 required 
               />
@@ -100,7 +131,7 @@ export default function CreatePage() {
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-foreground/80 uppercase tracking-[0.1em]" htmlFor="image">
-                Photo (Optional)
+                Photo / Video (Optional)
               </label>
               <div className="relative">
                 <input 
@@ -108,7 +139,7 @@ export default function CreatePage() {
                   id="image" 
                   name="image" 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                  accept="image/*" 
+                  accept="image/*,video/*" 
                   onChange={handleFileChange}
                 />
                 <div className="w-full bg-background/50 backdrop-blur-sm border border-dashed border-border rounded-xl px-4 py-8 flex flex-col items-center justify-center gap-2 group hover:border-accent/50 transition-colors">
@@ -126,7 +157,7 @@ export default function CreatePage() {
               <textarea 
                 id="content" 
                 name="content" 
-                className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 min-h-[140px] focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow resize-y" 
+                className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 md:py-4 text-base min-h-[140px] focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow resize-y" 
                 placeholder="Tell the story behind this memory..." 
                 required
               ></textarea>
@@ -141,7 +172,7 @@ export default function CreatePage() {
                   type={showPassword ? "text" : "password"} 
                   id="password" 
                   name="password" 
-                  className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
+                  className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 md:py-4 text-base pr-12 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
                   placeholder="Enter the secret password to save..." 
                   required 
                 />

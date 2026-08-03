@@ -12,13 +12,14 @@ export default function Timeline({ stories }) {
   const sortedStories = [...stories].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   useEffect(() => {
-    if (sortedStories.length > 0) {
-      const startDate = new Date(sortedStories[0].created_at);
+    if (stories.length > 0) {
+      const sorted = [...stories].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const startDate = new Date(sorted[0].created_at);
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - startDate.getTime());
       setDiffDays(Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))));
     }
-  }, [sortedStories]);
+  }, [stories]);
 
   if (sortedStories.length === 0) return null;
 

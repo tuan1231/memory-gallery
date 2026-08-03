@@ -1,7 +1,9 @@
 import { Inter } from 'next/font/google';
 import Navbar from './components/Navbar';
-import DynamicBackground from './components/DynamicBackground';
+import dynamic from 'next/dynamic';
 import "./globals.css";
+
+const DynamicBackground = dynamic(() => import('./components/DynamicBackground'));
 
 const inter = Inter({
   subsets: ['latin'],

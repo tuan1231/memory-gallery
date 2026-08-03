@@ -5,6 +5,67 @@ import Link from "next/link";
 import { motion, useSpring, useTransform, useMotionValue } from "motion/react";
 import MasonryItem from "./MasonryItem";
 import ScrollRevealGrid from "./ScrollRevealGrid";
+import Image from "next/image";
+
+function MonthCalendar({ monthData }) {
+  const { year, month, stories, daysMap } = monthData;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0 = Sunday
+  
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const blanks = Array.from({ length: firstDayOfWeek }, (_, i) => i);
+  const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+
+  return (
+    <div className="mb-32">
+      <div className="flex items-end justify-between mb-8 border-b border-border/30 pb-4">
+        <h3 className="text-3xl md:text-4xl font-bold tracking-tight uppercase">
+          {monthNames[month]} {year}
+        </h3>
+        <p className="text-foreground/50 font-medium uppercase tracking-[0.15em] text-xs pb-1">
+          {stories.length} Ký ức
+        </p>
+      </div>
+      
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-2 md:gap-4 mb-16 max-w-4xl mx-auto">
+        {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(d => (
+          <div key={d} className="text-center text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-2">{d}</div>
+        ))}
+        {blanks.map(b => <div key={`b-${b}`} className="aspect-square rounded-xl bg-transparent"></div>)}
+        
+        {daysArray.map(day => {
+          const hasStory = !!daysMap[day];
+          const story = daysMap[day];
+          
+          return (
+            <div key={day} className={`relative aspect-square rounded-xl md:rounded-2xl overflow-hidden flex items-center justify-center border transition-all duration-300 ${hasStory ? 'border-accent/40 shadow-xl shadow-accent/10 cursor-pointer hover:scale-110 hover:z-20 z-10' : 'border-border/10 bg-foreground/5 opacity-40'}`}>
+               {!hasStory && <span className="text-[10px] md:text-xs font-bold text-foreground/30">{day}</span>}
+               
+               {hasStory && story.image_url && (
+                 <>
+                   <Image src={story.image_url} alt="" fill sizes="100px" quality={50} className="object-cover" />
+                   <div className="absolute inset-0 bg-black/30 hover:bg-black/10 transition-colors"></div>
+                 </>
+               )}
+               {hasStory && !story.image_url && (
+                 <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
+                   <span className="text-lg md:text-2xl">💗</span>
+                 </div>
+               )}
+               {hasStory && <span className="absolute bottom-1 right-2 text-white text-[10px] md:text-xs font-black z-10 drop-shadow-md">{day}</span>}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Cards for this month */}
+      <ScrollRevealGrid className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6">
+        {stories.map(s => <MasonryItem key={s.id} story={s} />)}
+      </ScrollRevealGrid>
+    </div>
+  );
+}
 
 // Normal Card for a single story
 function StoryCard({ story, dateStr }) {
@@ -46,11 +107,13 @@ function StoryCard({ story, dateStr }) {
       >
         <div className="relative rounded-2xl overflow-hidden bg-foreground/5 aspect-[4/5] sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square">
           {story.image_url ? (
-            <img 
+            <Image
               src={story.image_url} 
               alt={story.title || 'Memory'} 
-              className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              quality={85}
+              className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-6 md:p-8 bg-card-bg/80 text-center border-b border-border/10">
@@ -160,7 +223,14 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
                 className={`absolute inset-0 rounded-2xl overflow-hidden shadow-lg border border-border/20 ${isTop ? 'z-20 bg-foreground/5' : 'z-10 bg-card-bg'}`}
               >
                 {story.image_url ? (
-                  <img src={story.image_url} className="w-full h-full object-cover" />
+                  <Image 
+                    src={story.image_url} 
+                    alt="Memory Stack" 
+                    fill 
+                    sizes="(max-width: 768px) 100vw, 50vw" 
+                    quality={85} 
+                    className="object-cover" 
+                  />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-card-bg/80 text-center">
                     <span className="text-3xl mb-2 opacity-50">💗</span>
@@ -204,6 +274,26 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
 
 export default function MemoryTimeline({ stories }) {
   const [selectedDayId, setSelectedDayId] = useState(null);
+  const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'calendar'
+
+  const calendarMonths = useMemo(() => {
+    const grouped = {};
+    [...stories].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).forEach(story => {
+      const d = new Date(story.created_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          year: d.getFullYear(),
+          month: d.getMonth(),
+          stories: [],
+          daysMap: {}
+        };
+      }
+      grouped[key].stories.push(story);
+      grouped[key].daysMap[d.getDate()] = story;
+    });
+    return Object.values(grouped);
+  }, [stories]);
 
   const nodes = useMemo(() => {
     // Chronological order (oldest first)
@@ -323,11 +413,59 @@ export default function MemoryTimeline({ stories }) {
     );
   }
 
-  // Render Main Timeline
+  const monthNodes = nodes.filter(n => n.type === 'month');
+
+  // Render Main View
   return (
-    <div className="w-full max-w-5xl mx-auto pb-32 px-4 sm:px-8 relative">
+    <div className="w-full max-w-7xl mx-auto pb-32 px-4 sm:px-8 relative">
       
-      <div className="flex flex-col gap-8 md:gap-16 pt-8 relative z-10">
+      {/* View Mode Toggle */}
+      <div className="flex justify-center mb-16 relative z-20">
+        <div className="bg-foreground/5 p-1.5 rounded-full flex items-center backdrop-blur-md border border-border/50">
+          <button 
+            onClick={() => setViewMode('timeline')}
+            className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${viewMode === 'timeline' ? 'bg-foreground text-background shadow-md' : 'text-foreground/60 hover:text-foreground'}`}
+          >
+            Hành Trình
+          </button>
+          <button 
+            onClick={() => setViewMode('calendar')}
+            className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${viewMode === 'calendar' ? 'bg-foreground text-background shadow-md' : 'text-foreground/60 hover:text-foreground'}`}
+          >
+            Lịch Ký Ức
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'calendar' ? (
+        <div className="w-full mt-8">
+          {calendarMonths.map((monthData, idx) => (
+            <MonthCalendar key={idx} monthData={monthData} />
+          ))}
+        </div>
+      ) : (
+        <div className="w-full max-w-5xl mx-auto relative">
+          
+          {/* Floating Timeline Navigator */}
+          {monthNodes.length > 0 && (
+            <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 bg-background/60 backdrop-blur-md p-3 rounded-full border border-border/50 shadow-xl">
+              {monthNodes.map(node => (
+                <button
+                  key={`nav-${node.id}`}
+                  onClick={() => {
+                    document.getElementById(node.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-foreground/20 hover:bg-accent transition-all group relative"
+                >
+                  <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
+                    {node.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-8 md:gap-16 pt-8 relative z-10">
         {nodes.map((node, i) => {
           const params = curveParams[i];
           
@@ -335,6 +473,7 @@ export default function MemoryTimeline({ stories }) {
             return (
               <motion.div 
                 key={node.id}
+                id={node.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
@@ -446,6 +585,8 @@ export default function MemoryTimeline({ stories }) {
           The journey continues...
         </div>
       </motion.div>
+        </div>
+      )}
     </div>
   );
 }

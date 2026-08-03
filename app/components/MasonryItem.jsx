@@ -2,10 +2,29 @@
 
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { PlayCircle } from "@phosphor-icons/react";
 
 export default function MasonryItem({ story }) {
   const cardRef = useRef(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          videoRef.current.play().catch(() => {});
+        } else {
+          videoRef.current.pause();
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    observer.observe(videoRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Motion values for smooth 120fps performance without React re-renders
   const x = useMotionValue(0);
@@ -29,6 +48,7 @@ export default function MasonryItem({ story }) {
   });
 
   const hasImage = Boolean(story.image_url);
+  const isVideo = hasImage && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -65,21 +85,39 @@ export default function MasonryItem({ story }) {
             minHeight: hasImage ? "auto" : "250px", 
             transformStyle: "preserve-3d" 
           }}
+          whileTap={{ scale: 0.96 }}
           className="relative overflow-hidden group cursor-pointer bg-card-bg flex flex-col justify-end shadow-sm hover:shadow-2xl transition-shadow duration-500 rounded-2xl w-full h-full"
         >
           {hasImage ? (
             <>
-              <img
-                src={story.image_url}
-                alt={story.title}
-                className="w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
-                loading="lazy"
-              />
+              {isVideo ? (
+                <div className="relative w-full h-full">
+                  <video
+                    ref={videoRef}
+                    src={story.image_url}
+                    className="w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <div className="absolute top-4 right-4 text-white/90 z-20 drop-shadow-lg">
+                    <PlayCircle size={28} weight="fill" />
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={story.image_url}
+                  alt={story.title}
+                  className="w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+                  loading="lazy"
+                />
+              )}
               {/* Scrim for readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500 ease-out pointer-events-none" />
               
               <div 
-                className="absolute bottom-0 left-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none"
+                className="absolute bottom-0 left-0 right-0 p-6 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none"
                 style={{ transform: "translateZ(40px)" }} // 3D pop effect for text
               >
                 <h3 className="text-white text-2xl font-bold tracking-tight mb-1 leading-tight drop-shadow-md">{story.title}</h3>

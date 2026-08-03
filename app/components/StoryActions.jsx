@@ -55,32 +55,32 @@ export default function StoryActions({ storyId, isArchived }) {
 
   return (
     <>
-      <div className="mt-8 pt-8 border-t border-border">
+      <div className="flex gap-3">
         {isArchived ? (
-          <div className="flex gap-4">
+          <>
             <button
               onClick={() => openModal('restore')}
-              className="flex items-center gap-2 px-6 py-3 bg-foreground text-background font-bold rounded-xl hover:opacity-90 transition-opacity uppercase tracking-widest text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background font-bold rounded-full hover:opacity-90 transition-opacity uppercase tracking-[0.1em] text-xs"
             >
               <ArrowUUpLeft size={20} />
               Restore
             </button>
             <button
               onClick={() => openModal('delete')}
-              className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-sm border border-red-500/20"
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-full hover:bg-red-500/20 transition-colors uppercase tracking-[0.1em] text-xs border border-red-500/20"
             >
-              <Trash size={20} />
+              <Trash size={16} weight="bold" />
               Delete Permanently
             </button>
-          </div>
+          </>
         ) : (
-          <button
-            onClick={() => openModal('archive')}
-            className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-sm border border-red-500/20"
-          >
-            <Archive size={20} />
-            Archive (Delete)
-          </button>
+            <button
+              onClick={() => openModal('archive')}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 font-bold rounded-full hover:bg-red-500/20 transition-colors uppercase tracking-[0.1em] text-xs border border-red-500/20"
+            >
+              <Archive size={16} weight="bold" />
+              Archive (Delete)
+            </button>
         )}
       </div>
 

@@ -16,8 +16,9 @@ function SearchOverlay({ onSelectResult, userLocation }) {
   const doGogodukSuggest = async (query, signal) => {
     const url = `/api/gogoduk?action=suggest&input=${encodeURIComponent(query)}`;
     const res = await fetch(url, { signal });
-    if (res.status === 401) {
-      throw new Error("Unauthorized. Please check your GoGoDuk API Key.");
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(`Lỗi API: ${res.status} - ${errorData.message || errorData.error || res.statusText || 'Không xác định'}`);
     }
     const data = await res.json();
     return data;
@@ -86,6 +87,7 @@ function SearchOverlay({ onSelectResult, userLocation }) {
       }
     } catch (err) {
       console.error("Search submit error:", err);
+      alert(err.message);
     } finally {
       setIsSearching(false);
     }

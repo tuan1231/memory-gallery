@@ -96,3 +96,18 @@ export async function getMapPlaces() {
 
   return data || [];
 }
+
+export async function getCommentsByStoryId(storyId) {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('story_id', storyId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching comments:', error);
+    return [];
+  }
+
+  return data || [];
+}

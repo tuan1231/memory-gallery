@@ -208,3 +208,66 @@ export async function deleteMapPlace(id, password) {
     throw new Error('Xóa thất bại! Bảng "love_map_places" đang bị chặn quyền DELETE bởi RLS trên Supabase.');
   }
 }
+
+export async function addComment(storyId, authorName, content, parentId = null) {
+  if (!authorName || !content) {
+    throw new Error('Vui lòng nhập tên và nội dung bình luận!');
+  }
+  
+  const { data, error } = await supabase
+    .from('comments')
+    .insert({
+      story_id: storyId,
+      author_name: authorName,
+      content,
+      parent_id: parentId
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Insert comment error:', error);
+    throw new Error(`Lỗi từ CSDL: ${error.message} | Details: ${error.details || ''} | Hint: ${error.hint || ''}`);
+  }
+
+  return data;
+}
+
+export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
+  const { data: comment, error: fetchError } = await supabase
+    .from('comments')
+    .select('reactions')
+    .eq('id', commentId)
+    .single();
+    
+  if (fetchError) throw new Error('Không tìm thấy bình luận');
+  
+  const currentReactions = comment.reactions || {};
+  
+  // Xóa emoji cũ nếu có
+  if (oldEmoji && currentReactions[oldEmoji] > 0) {
+    currentReactions[oldEmoji] -= 1;
+    if (currentReactions[oldEmoji] === 0) {
+      delete currentReactions[oldEmoji];
+    }
+  }
+  
+  // Thêm emoji mới nếu có
+  if (newEmoji) {
+    currentReactions[newEmoji] = (currentReactions[newEmoji] || 0) + 1;
+  }
+  
+  const { data, error } = await supabase
+    .from('comments')
+    .update({ reactions: currentReactions })
+    .eq('id', commentId)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Update reaction error:', error);
+    throw new Error('Thả biểu cảm thất bại');
+  }
+  
+  return data;
+}
