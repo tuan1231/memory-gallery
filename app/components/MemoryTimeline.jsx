@@ -38,13 +38,19 @@ function MonthCalendar({ monthData }) {
           const hasStory = !!daysMap[day];
           const story = daysMap[day];
           
+          const isVideo = story?.image_url?.match(/\.(mp4|webm|mov|ogg)$/i);
+          
           return (
             <div key={day} className={`relative aspect-square rounded-xl md:rounded-2xl overflow-hidden flex items-center justify-center border transition-all duration-300 ${hasStory ? 'border-accent/40 shadow-xl shadow-accent/10 cursor-pointer hover:scale-110 hover:z-20 z-10' : 'border-border/10 bg-foreground/5 opacity-40'}`}>
                {!hasStory && <span className="text-[10px] md:text-xs font-bold text-foreground/30">{day}</span>}
                
                {hasStory && story.image_url && (
                  <>
-                   <Image src={story.image_url} alt="" fill sizes="100px" quality={50} className="object-cover" />
+                   {isVideo ? (
+                     <video src={story.image_url} className="absolute inset-0 w-full h-full object-cover" muted playsInline loop autoPlay />
+                   ) : (
+                     <Image src={story.image_url} alt="" fill sizes="100px" quality={50} className="object-cover" />
+                   )}
                    <div className="absolute inset-0 bg-black/30 hover:bg-black/10 transition-colors"></div>
                  </>
                )}
@@ -94,6 +100,8 @@ function StoryCard({ story, dateStr }) {
     y.set(0);
   };
 
+  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
+
   return (
     <Link 
       href={`/story/${story.id}`}
@@ -107,14 +115,25 @@ function StoryCard({ story, dateStr }) {
       >
         <div className="relative rounded-2xl overflow-hidden bg-foreground/5 aspect-[4/5] sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square">
           {story.image_url ? (
-            <Image
-              src={story.image_url} 
-              alt={story.title || 'Memory'} 
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              quality={85}
-              className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
-            />
+            isVideo ? (
+              <video 
+                src={story.image_url} 
+                muted 
+                playsInline 
+                loop 
+                autoPlay
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+              />
+            ) : (
+              <Image
+                src={story.image_url} 
+                alt={story.title || 'Memory'} 
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                quality={85}
+                className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+              />
+            )
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-6 md:p-8 bg-card-bg/80 text-center border-b border-border/10">
               <span className="text-4xl mb-4 opacity-50">💗</span>
@@ -199,6 +218,7 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
           {[...displayStories].reverse().map((story, reversedIndex) => {
             const originalIndex = displayStories.length - 1 - reversedIndex;
             const isTop = originalIndex === 0;
+            const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
             
             const variants = {
               rest: {
@@ -223,14 +243,18 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
                 className={`absolute inset-0 rounded-2xl overflow-hidden shadow-lg border border-border/20 ${isTop ? 'z-20 bg-foreground/5' : 'z-10 bg-card-bg'}`}
               >
                 {story.image_url ? (
-                  <Image 
-                    src={story.image_url} 
-                    alt="Memory Stack" 
-                    fill 
-                    sizes="(max-width: 768px) 100vw, 50vw" 
-                    quality={85} 
-                    className="object-cover" 
-                  />
+                  isVideo ? (
+                    <video src={story.image_url} muted playsInline loop autoPlay className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <Image 
+                      src={story.image_url} 
+                      alt="Memory Stack" 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, 50vw" 
+                      quality={85} 
+                      className="object-cover" 
+                    />
+                  )
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-card-bg/80 text-center">
                     <span className="text-3xl mb-2 opacity-50">💗</span>
