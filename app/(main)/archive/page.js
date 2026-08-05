@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { getArchivedStories } from '../lib/data';
-import MasonryItem from '../components/MasonryItem';
-import ScrollRevealGrid from '../components/ScrollRevealGrid';
+import { getArchivedStories } from '../../lib/data';
+import MasonryItem from '../../components/MasonryItem';
+import ScrollRevealGrid from '../../components/ScrollRevealGrid';
 
 export const revalidate = 0; // Ensure data is always fresh
 

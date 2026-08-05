@@ -3,17 +3,26 @@
 import { supabase } from './supabase';
 import crypto from 'crypto';
 import path from 'path';
+import { cookies } from 'next/headers';
+import { decryptSession } from './session';
+
+async function requireAuth() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  if (!sessionToken) throw new Error('Unauthorized');
+  
+  const payload = await decryptSession(sessionToken);
+  if (!payload || !payload.username) throw new Error('Unauthorized');
+  
+  return payload.username;
+}
 
 export async function createStory(formData) {
+  await requireAuth();
+
   const title = formData.get('title');
   const content = formData.get('content');
   const image = formData.get('image');
-  const password = formData.get('password');
-
-  // Basic password protection (you can change this password)
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
 
   if (!title || !content) {
     throw new Error('Please provide a title and a story!');
@@ -70,10 +79,8 @@ export async function createStory(formData) {
   return storyId;
 }
 
-export async function archiveStory(id, password) {
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
+export async function archiveStory(id) {
+  await requireAuth();
 
   const { data, error } = await supabase
     .from('stories')
@@ -91,10 +98,8 @@ export async function archiveStory(id, password) {
   }
 }
 
-export async function restoreStory(id, password) {
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
+export async function restoreStory(id) {
+  await requireAuth();
 
   const { data, error } = await supabase
     .from('stories')
@@ -112,10 +117,8 @@ export async function restoreStory(id, password) {
   }
 }
 
-export async function deleteStoryPermanently(id, password) {
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
+export async function deleteStoryPermanently(id) {
+  await requireAuth();
 
   // First, get the story to find the image URL
   const { data: story, error: fetchError } = await supabase
@@ -159,10 +162,8 @@ export async function deleteStoryPermanently(id, password) {
   }
 }
 
-export async function addMapPlace(data, password) {
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
+export async function addMapPlace(data) {
+  await requireAuth();
 
   const { name, address, notes, lat, lng } = data;
 
@@ -188,10 +189,8 @@ export async function addMapPlace(data, password) {
   return true;
 }
 
-export async function deleteMapPlace(id, password) {
-  if (password !== 'iloveyou') {
-    throw new Error('Incorrect password!');
-  }
+export async function deleteMapPlace(id) {
+  await requireAuth();
 
   const { data, error } = await supabase
     .from('love_map_places')

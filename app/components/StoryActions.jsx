@@ -8,13 +8,11 @@ import { Trash, Archive, ArrowUUpLeft, X } from '@phosphor-icons/react';
 export default function StoryActions({ storyId, isArchived }) {
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState({ isOpen: false, action: null });
-  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
 
   const openModal = (actionType) => {
     setModalState({ isOpen: true, action: actionType });
-    setPassword('');
     setErrorMsg('');
   };
 
@@ -23,24 +21,19 @@ export default function StoryActions({ storyId, isArchived }) {
   };
 
   const handleConfirm = async () => {
-    if (!password) {
-      setErrorMsg("Please enter your password!");
-      return;
-    }
-
     setLoading(true);
     setErrorMsg('');
     try {
       if (modalState.action === 'archive') {
-        await archiveStory(storyId, password);
+        await archiveStory(storyId);
         alert("Moved to archive. This card will be permanently deleted after 3 days.");
         router.push('/');
       } else if (modalState.action === 'restore') {
-        await restoreStory(storyId, password);
+        await restoreStory(storyId);
         alert("Restored successfully.");
         router.push('/');
       } else if (modalState.action === 'delete') {
-        await deleteStoryPermanently(storyId, password);
+        await deleteStoryPermanently(storyId);
         alert("Permanently deleted.");
         router.push('/archive');
       }
@@ -99,20 +92,6 @@ export default function StoryActions({ storyId, isArchived }) {
             </p>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground/80 uppercase tracking-wider mb-2">
-                  Secret Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="Enter password..."
-                  autoFocus
-                />
-              </div>
-
               {errorMsg && (
                 <div className="text-red-500 text-sm font-medium bg-red-500/10 p-3 rounded-lg border border-red-500/20">
                   {errorMsg}

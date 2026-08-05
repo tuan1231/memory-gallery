@@ -35,7 +35,7 @@ export default async function StoryDetail({ params }) {
   });
 
   const otherStories = allStories.filter(s => s.id !== story.id).slice(0, 4);
-  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
+  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i);
 
   return (
     <div className="max-w-7xl mx-auto py-8 md:py-12 px-4 relative z-10">

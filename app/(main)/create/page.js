@@ -6,14 +6,12 @@ import { createStory } from '../lib/actions';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import imageCompression from 'browser-image-compression';
-import { Eye, EyeSlash } from '@phosphor-icons/react';
 import InteractiveCat from '../components/InteractiveCat';
 
 export default function CreatePage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const formRef = useRef(null);
 
@@ -61,7 +59,7 @@ export default function CreatePage() {
     }
     
     if (file.size > 20 * 1024 * 1024) {
-      setError('File quá lớn. Vui lòng chọn file dưới 20MB.');
+      setError('File too large. Please select a file under 20MB.');
       e.target.value = '';
       setFileName('');
       return;
@@ -73,7 +71,7 @@ export default function CreatePage() {
       video.onloadedmetadata = () => {
         window.URL.revokeObjectURL(video.src);
         if (video.duration > 10) {
-          setError('Video quá dài. Vui lòng chọn video dưới 10 giây.');
+          setError('Video too long. Please select a video under 10 seconds.');
           e.target.value = '';
           setFileName('');
         } else {
@@ -161,30 +159,6 @@ export default function CreatePage() {
                 placeholder="Tell the story behind this memory..." 
                 required
               ></textarea>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-foreground/80 uppercase tracking-[0.1em]" htmlFor="password">
-                Secret Password
-              </label>
-              <div className="relative">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  id="password" 
-                  name="password" 
-                  className="w-full bg-background/50 backdrop-blur-sm border border-border rounded-xl px-4 py-3 md:py-4 text-base pr-12 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-shadow" 
-                  placeholder="Enter the secret password to save..." 
-                  required 
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
             </div>
 
             <button 

@@ -13,15 +13,15 @@ function SearchOverlay({ onSelectResult, userLocation }) {
   const [isSearching, setIsSearching] = useState(false);
   const skipSearchRef = useRef(false);
 
-  const doGogodukSuggest = async (query, signal) => {
-    const url = `/api/gogoduk?action=suggest&input=${encodeURIComponent(query)}`;
+  const doMapboxSearch = async (query, signal) => {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) throw new Error('Missing Mapbox Token');
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=vn&autocomplete=true&limit=5`;
     const res = await fetch(url, { signal });
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(`Lỗi API: ${res.status} - ${errorData.message || errorData.error || res.statusText || 'Không xác định'}`);
+      throw new Error(`Mapbox API Error: ${res.status}`);
     }
-    const data = await res.json();
-    return data;
+    return await res.json();
   };
 
   // Debounced search for suggestions as user types
@@ -41,12 +41,14 @@ function SearchOverlay({ onSelectResult, userLocation }) {
       
       setIsSearching(true);
       try {
-        const data = await doGogodukSuggest(searchQuery, controller.signal);
+        const data = await doMapboxSearch(searchQuery, controller.signal);
         
-        if (data && data.predictions) {
-          const mappedResults = data.predictions.map(p => ({
-            place_id: p.placeId,
-            display_name: p.text
+        if (data && data.features) {
+          const mappedResults = data.features.map(f => ({
+            place_id: f.id,
+            display_name: f.place_name,
+            lat: f.center[1],
+            lon: f.center[0]
           }));
           setSearchResults(mappedResults);
         } else {
@@ -75,15 +77,17 @@ function SearchOverlay({ onSelectResult, userLocation }) {
     setSearchResults([]); 
     
     try {
-      const data = await doGogodukSuggest(searchQuery);
-      if (data && data.predictions && data.predictions.length > 0) {
-        const p = data.predictions[0];
+      const data = await doMapboxSearch(searchQuery);
+      if (data && data.features && data.features.length > 0) {
+        const f = data.features[0];
         handleSelectSearchResult({
-          place_id: p.placeId,
-          display_name: p.text
+          place_id: f.id,
+          display_name: f.place_name,
+          lat: f.center[1],
+          lon: f.center[0]
         });
       } else {
-        alert("Không tìm thấy địa điểm này. Vui lòng thử từ khóa khác.");
+        alert("Place not found. Please try another keyword.");
       }
     } catch (err) {
       console.error("Search submit error:", err);
@@ -93,34 +97,15 @@ function SearchOverlay({ onSelectResult, userLocation }) {
     }
   };
 
-  const handleSelectSearchResult = async (result) => {
+  const handleSelectSearchResult = (result) => {
     setSearchResults([]);
     skipSearchRef.current = true;
     setSearchQuery(result.display_name);
     
-    let finalResult = { ...result };
-    
-    if (!finalResult.lat || !finalResult.lon) {
-      try {
-        const res = await fetch(`/api/gogoduk?action=resolve&id=${finalResult.place_id}`);
-        const data = await res.json();
-        if (data && data.result) {
-          finalResult.lat = data.result.lat;
-          finalResult.lon = data.result.lon;
-          if (data.result.address) {
-            finalResult.display_name = data.result.address;
-            setSearchQuery(finalResult.display_name);
-          }
-        }
-      } catch (err) {
-        console.error("Resolve error:", err);
-      }
-    }
-    
-    if (finalResult.lat && finalResult.lon) {
-      onSelectResult(finalResult);
+    if (result.lat && result.lon) {
+      onSelectResult(result);
     } else {
-      alert("Không thể lấy toạ độ cho địa điểm này.");
+      alert("Cannot get coordinates for this place.");
     }
   };
 
@@ -227,13 +212,13 @@ export default function MapComponent({ places = [] }) {
     setSelectedPlace(null);
     
     if (setSelectedAddress) {
-      setSelectedAddress('Đang tải địa chỉ...');
+      setSelectedAddress('Loading address...');
       try {
-        const res = await fetch(`/api/gogoduk?action=reverse&lat=${lat}&lon=${lng}`);
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&types=address,poi,place`);
         const data = await res.json();
-        if (data && data.results && data.results.length > 0) {
-          const f = data.results[0];
-          setSelectedAddress(f.address);
+        if (data && data.features && data.features.length > 0) {
+          setSelectedAddress(data.features[0].place_name);
         } else {
           setSelectedAddress('');
         }
@@ -258,9 +243,7 @@ export default function MapComponent({ places = [] }) {
         lat: newMarkerPos.lat,
         lng: newMarkerPos.lng
       };
-      const password = formData.get('password');
-
-      await addMapPlace(data, password);
+      await addMapPlace(data);
       
       setNewMarkerPos(null);
       setIsAdding(false);
@@ -274,15 +257,14 @@ export default function MapComponent({ places = [] }) {
   };
 
   const handleDeletePlace = async (id) => {
-    const password = window.prompt("Nhập mật khẩu để xóa địa điểm này (gợi ý: iloveyou):");
-    if (!password) return;
-    
-    try {
-      await deleteMapPlace(id, password);
-      setSelectedPlace(null); // Close popup
-      router.refresh();
-    } catch (err) {
-      alert(err.message);
+    if (window.confirm("Are you sure you want to delete this place?")) {
+      try {
+        await deleteMapPlace(id);
+        setSelectedPlace(null); // Close popup
+        router.refresh();
+      } catch (err) {
+        alert(err.message);
+      }
     }
   };
 
@@ -371,7 +353,7 @@ export default function MapComponent({ places = [] }) {
                   onClick={() => handleDeletePlace(selectedPlace.id)}
                   className="text-xs text-red-500/80 hover:text-red-600 font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-lg hover:bg-red-500/10 active:scale-95"
                 >
-                  <Trash size={14} weight="bold" /> Xóa
+                  <Trash size={14} weight="bold" /> Delete
                 </button>
               </div>
             </div>
@@ -432,10 +414,7 @@ export default function MapComponent({ places = [] }) {
               <label className="block text-xs font-bold text-foreground/80 uppercase tracking-wider mb-1">Notes (Optional)</label>
               <textarea name="notes" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent resize-none h-20" placeholder="Our favorite dish was..."></textarea>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-foreground/80 uppercase tracking-wider mb-1">Password</label>
-              <input type="password" name="password" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Secret password..." />
-            </div>
+
             
             {errorMsg && <p className="text-red-500 text-xs font-medium">{errorMsg}</p>}
             

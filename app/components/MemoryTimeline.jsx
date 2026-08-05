@@ -14,7 +14,7 @@ function MonthCalendar({ monthData }) {
   
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDayOfWeek }, (_, i) => i);
-  const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
     <div className="mb-32">
@@ -23,13 +23,13 @@ function MonthCalendar({ monthData }) {
           {monthNames[month]} {year}
         </h3>
         <p className="text-foreground/50 font-medium uppercase tracking-[0.15em] text-xs pb-1">
-          {stories.length} Ký ức
+          {stories.length} {stories.length === 1 ? 'Memory' : 'Memories'}
         </p>
       </div>
       
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-2 md:gap-4 mb-16 max-w-4xl mx-auto">
-        {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(d => (
+        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
           <div key={d} className="text-center text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-2">{d}</div>
         ))}
         {blanks.map(b => <div key={`b-${b}`} className="aspect-square rounded-xl bg-transparent"></div>)}
@@ -38,7 +38,7 @@ function MonthCalendar({ monthData }) {
           const hasStory = !!daysMap[day];
           const story = daysMap[day];
           
-          const isVideo = story?.image_url?.match(/\.(mp4|webm|mov|ogg)$/i);
+          const isVideo = story?.image_url?.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i);
           
           return (
             <div key={day} className={`relative aspect-square rounded-xl md:rounded-2xl overflow-hidden flex items-center justify-center border transition-all duration-300 ${hasStory ? 'border-accent/40 shadow-xl shadow-accent/10 cursor-pointer hover:scale-110 hover:z-20 z-10' : 'border-border/10 bg-foreground/5 opacity-40'}`}>
@@ -100,7 +100,7 @@ function StoryCard({ story, dateStr }) {
     y.set(0);
   };
 
-  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
+  const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i);
 
   return (
     <Link 
@@ -218,7 +218,7 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
           {[...displayStories].reverse().map((story, reversedIndex) => {
             const originalIndex = displayStories.length - 1 - reversedIndex;
             const isTop = originalIndex === 0;
-            const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
+            const isVideo = story.image_url && story.image_url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i);
             
             const variants = {
               rest: {

@@ -1,5 +1,5 @@
 import { Inter } from 'next/font/google';
-import Navbar from './components/Navbar';
+import ServerLayoutWrapper from './components/ServerLayoutWrapper';
 import dynamic from 'next/dynamic';
 import "./globals.css";
 
@@ -23,11 +23,11 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} bg-background text-foreground min-h-[100dvh] flex flex-col transition-colors duration-300`}>
         <DynamicBackground />
-        <Navbar />
-        <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10">
+        <ServerLayoutWrapper>
           {children}
-        </main>
+        </ServerLayoutWrapper>
       </body>
     </html>
   );
 }
+

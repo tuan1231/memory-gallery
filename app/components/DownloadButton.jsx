@@ -17,13 +17,13 @@ export default function DownloadButton({ url, title }) {
       const safeTitle = (title || 'memory').replace(/[^a-z0-9]/gi, '_').toLowerCase();
       const filename = `${safeTitle}.${ext}`;
 
-      // Tối ưu cho Mobile: Mở bảng Share native (Lưu vào thư viện ảnh, gửi Zalo, Messenger...)
+      // Optimized for Mobile: Open native Share dialog (Save to photos, send via messages...)
       if (navigator.canShare) {
         const file = new File([blob], filename, { type: blob.type });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: title,
-            text: 'Ký ức từ Memory Gallery 💗',
+            text: 'Memory from the Gallery 💗',
             files: [file]
           });
           setDownloading(false);

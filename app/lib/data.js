@@ -1,5 +1,53 @@
 import { supabase } from './supabase';
 
+async function signImageUrls(stories) {
+  if (!stories) return stories;
+  
+  const isArray = Array.isArray(stories);
+  const items = isArray ? stories : [stories];
+  
+  // Extract all valid filenames
+  const filenames = [];
+  const filenameToItemMap = new Map();
+  
+  for (const item of items) {
+    if (item.image_url) {
+      const urlParts = item.image_url.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      if (filename) {
+        filenames.push(filename);
+        if (!filenameToItemMap.has(filename)) {
+          filenameToItemMap.set(filename, []);
+        }
+        filenameToItemMap.get(filename).push(item);
+      }
+    }
+  }
+  
+  if (filenames.length > 0) {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uploads')
+        .createSignedUrls(filenames, 60 * 60 * 24); // 24 hours
+        
+      if (data) {
+        for (const signedObj of data) {
+          if (signedObj.signedUrl && filenameToItemMap.has(signedObj.path)) {
+            const linkedItems = filenameToItemMap.get(signedObj.path);
+            for (const item of linkedItems) {
+              item.image_url = signedObj.signedUrl;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to batch sign urls", e);
+    }
+  }
+  
+  return isArray ? items : items[0];
+}
+
 export async function cleanupOldArchives() {
   try {
     const threeDaysAgo = new Date();
@@ -48,7 +96,8 @@ export async function getStories() {
     return [];
   }
 
-  return data || [];
+  const signedData = await signImageUrls(data);
+  return signedData || [];
 }
 
 export async function getArchivedStories() {
@@ -65,7 +114,8 @@ export async function getArchivedStories() {
     return [];
   }
 
-  return data || [];
+  const signedData = await signImageUrls(data);
+  return signedData || [];
 }
 
 export async function getStoryById(id) {
@@ -80,7 +130,8 @@ export async function getStoryById(id) {
     return null;
   }
 
-  return data;
+  const signedData = await signImageUrls(data);
+  return signedData;
 }
 
 export async function getMapPlaces() {

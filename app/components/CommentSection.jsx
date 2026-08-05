@@ -121,22 +121,22 @@ export default function CommentSection({ storyId, initialComments = [] }) {
     <form onSubmit={(e) => handleAddComment(e, parentId)} className="mt-4 bg-background/50 border border-border/50 rounded-2xl p-4">
       <input 
         name="author" 
-        placeholder="Tên của bạn..." 
+        placeholder="Your name..." 
         required 
         className="w-full bg-transparent border-b border-border/50 px-2 py-2 mb-4 focus:outline-none focus:border-accent text-sm font-medium"
       />
       <textarea 
         name="content" 
-        placeholder="Viết bình luận..." 
+        placeholder="Write a comment..." 
         required 
         rows={2}
         className="w-full bg-transparent border-none px-2 focus:outline-none text-sm resize-none"
       />
       <div className="flex justify-end gap-2 mt-2">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-foreground/5">Hủy</button>
+          <button type="button" onClick={onCancel} className="text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-foreground/5">Cancel</button>
         )}
-        <button type="submit" className="text-xs font-bold uppercase tracking-wider bg-foreground text-background px-4 py-1.5 rounded-full hover:scale-105 transition-transform">Gửi</button>
+        <button type="submit" className="text-xs font-bold uppercase tracking-wider bg-foreground text-background px-4 py-1.5 rounded-full hover:scale-105 transition-transform">Post</button>
       </div>
     </form>
   );
@@ -162,7 +162,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
                 onClick={() => setReplyTo(comment.id)} 
                 className="text-xs font-semibold text-foreground/60 hover:text-accent"
               >
-                Trả lời
+                Reply
               </button>
               
               <div className="flex gap-1 bg-foreground/5 rounded-full px-2 py-1 items-center">
@@ -211,7 +211,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
   return (
     <div className="w-full mt-16 pt-12 border-t border-border/30">
       <h3 className="text-2xl font-bold tracking-tight uppercase mb-8">
-        Bình luận ({comments.length})
+        Comments ({comments.length})
       </h3>
       
       <CommentForm />

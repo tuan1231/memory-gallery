@@ -48,7 +48,7 @@ export default function MasonryItem({ story }) {
   });
 
   const hasImage = Boolean(story.image_url);
-  const isVideo = hasImage && story.image_url.match(/\.(mp4|webm|mov|ogg)$/i);
+  const isVideo = hasImage && story.image_url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
