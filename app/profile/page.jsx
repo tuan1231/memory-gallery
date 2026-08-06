@@ -2,6 +2,7 @@ import { getSession, getProfiles, updateProfile } from '../lib/profile';
 import { logout } from '../actions/auth';
 import { redirect } from 'next/navigation';
 import AvatarDisplay from '../components/AvatarDisplay';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 import { Camera, User, ChatCircle, Heart, SignOut } from '@phosphor-icons/react/dist/ssr';
 
 export default async function ProfilePage() {
@@ -130,6 +131,9 @@ export default async function ProfilePage() {
                   </button>
                 </div>
               </form>
+
+              {/* Password Change Form */}
+              <ChangePasswordForm />
             </div>
           </div>
 

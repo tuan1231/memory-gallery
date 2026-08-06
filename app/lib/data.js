@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getProfiles } from './profile';
 
 async function signImageUrls(stories) {
   if (!stories) return stories;
@@ -97,7 +98,15 @@ export async function getStories() {
   }
 
   const signedData = await signImageUrls(data);
-  return signedData || [];
+  try {
+    const profiles = await getProfiles();
+    return (signedData || []).map(story => ({
+      ...story,
+      authorProfile: profiles.find(p => p.id === story.author_id) || null
+    }));
+  } catch (e) {
+    return signedData || [];
+  }
 }
 
 export async function getArchivedStories() {
@@ -115,7 +124,15 @@ export async function getArchivedStories() {
   }
 
   const signedData = await signImageUrls(data);
-  return signedData || [];
+  try {
+    const profiles = await getProfiles();
+    return (signedData || []).map(story => ({
+      ...story,
+      authorProfile: profiles.find(p => p.id === story.author_id) || null
+    }));
+  } catch (e) {
+    return signedData || [];
+  }
 }
 
 export async function getStoryById(id) {
@@ -131,6 +148,12 @@ export async function getStoryById(id) {
   }
 
   const signedData = await signImageUrls(data);
+  try {
+    const profiles = await getProfiles();
+    if (signedData) {
+      signedData.authorProfile = profiles.find(p => p.id === signedData.author_id) || null;
+    }
+  } catch (e) {}
   return signedData;
 }
 

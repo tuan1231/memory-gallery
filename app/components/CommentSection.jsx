@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { addComment, reactToComment } from "../lib/actions";
 import { motion, AnimatePresence } from "motion/react";
 import { UserCircle, Heart, ThumbsUp, Smiley } from "@phosphor-icons/react";
+import Link from 'next/link';
 
 const EMOJIS = [
   { id: 'heart', icon: Heart, color: 'text-red-500' },
@@ -11,7 +12,7 @@ const EMOJIS = [
   { id: 'smile', icon: Smiley, color: 'text-yellow-500' }
 ];
 
-export default function CommentSection({ storyId, initialComments = [] }) {
+export default function CommentSection({ storyId, initialComments = [], currentUser = null, profiles = [] }) {
   const [comments, setComments] = useState(initialComments);
   const [replyTo, setReplyTo] = useState(null);
   const [userReactions, setUserReactions] = useState({});
@@ -44,9 +45,12 @@ export default function CommentSection({ storyId, initialComments = [] }) {
 
   const handleAddComment = async (e, parentId = null) => {
     e.preventDefault();
+    if (!currentUser) return;
+
     const formData = new FormData(e.target);
-    const author = formData.get("author");
     const content = formData.get("content");
+    const author = currentUser.display_name || currentUser.username;
+    const avatar = currentUser.avatar_url;
     
     // Optimistic UI update
     const tempId = Date.now().toString();
@@ -55,6 +59,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
       story_id: storyId,
       parent_id: parentId,
       author_name: author,
+      avatar_url: avatar,
       content,
       created_at: new Date().toISOString(),
       reactions: {}
@@ -65,7 +70,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
     if (parentId) setReplyTo(null);
     
     try {
-      const savedComment = await addComment(storyId, author, content, parentId);
+      const savedComment = await addComment(storyId, content, parentId);
       setComments(prev => prev.map(c => c.id === tempId ? savedComment : c));
     } catch (err) {
       alert(err.message);
@@ -117,36 +122,61 @@ export default function CommentSection({ storyId, initialComments = [] }) {
     }
   };
 
-  const CommentForm = ({ parentId = null, onCancel = null }) => (
-    <form onSubmit={(e) => handleAddComment(e, parentId)} className="mt-4 bg-background/50 border border-border/50 rounded-2xl p-4">
-      <input 
-        name="author" 
-        placeholder="Your name..." 
-        required 
-        className="w-full bg-transparent border-b border-border/50 px-2 py-2 mb-4 focus:outline-none focus:border-accent text-sm font-medium"
-      />
-      <textarea 
-        name="content" 
-        placeholder="Write a comment..." 
-        required 
-        rows={2}
-        className="w-full bg-transparent border-none px-2 focus:outline-none text-sm resize-none"
-      />
-      <div className="flex justify-end gap-2 mt-2">
-        {onCancel && (
-          <button type="button" onClick={onCancel} className="text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-foreground/5">Cancel</button>
-        )}
-        <button type="submit" className="text-xs font-bold uppercase tracking-wider bg-foreground text-background px-4 py-1.5 rounded-full hover:scale-105 transition-transform">Post</button>
-      </div>
-    </form>
-  );
+  const CommentForm = ({ parentId = null, onCancel = null }) => {
+    if (!currentUser) {
+      return (
+        <div className="mt-4 bg-background/50 border border-border/50 rounded-2xl p-6 text-center">
+          <p className="text-foreground/70 mb-4 text-sm font-medium">Please sign in to comment</p>
+          <Link href="/login" className="bg-foreground text-background px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity inline-block">
+            Sign in
+          </Link>
+        </div>
+      );
+    }
+    
+    return (
+      <form onSubmit={(e) => handleAddComment(e, parentId)} className="mt-4 bg-background/50 border border-border/50 rounded-2xl p-4">
+        <div className="flex items-center gap-3 mb-3 px-2">
+          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+             {currentUser.avatar_url ? (
+               <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
+             ) : (
+               <div className="w-full h-full bg-foreground/10 flex items-center justify-center font-bold text-xs text-foreground/50">
+                 {(currentUser.display_name || currentUser.username || '?').charAt(0).toUpperCase()}
+               </div>
+             )}
+          </div>
+          <span className="text-sm font-bold">{currentUser.display_name || currentUser.username}</span>
+        </div>
+        <textarea 
+          name="content" 
+          placeholder="Write a comment..." 
+          required 
+          rows={2}
+          className="w-full bg-transparent border-none px-2 focus:outline-none text-sm resize-none"
+        />
+        <div className="flex justify-end gap-2 mt-2">
+          {onCancel && (
+            <button type="button" onClick={onCancel} className="text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-foreground/5">Cancel</button>
+          )}
+          <button type="submit" className="text-xs font-bold uppercase tracking-wider bg-foreground text-background px-4 py-1.5 rounded-full hover:scale-105 transition-transform">Post</button>
+        </div>
+      </form>
+    );
+  };
 
   const CommentItem = ({ comment, depth = 0 }) => {
+    const avatarUrl = comment.avatar_url || profiles.find(p => p.display_name === comment.author_name || p.username === comment.author_name)?.avatar_url;
+
     return (
       <div className={`mb-4 ${depth > 0 ? 'ml-6 md:ml-12 border-l-2 border-border/30 pl-4' : ''}`}>
         <div className="flex gap-3">
-          <div className="mt-1">
-            <UserCircle size={32} weight="fill" className="text-foreground/30" />
+          <div className="mt-1 w-8 h-8 rounded-full overflow-hidden shrink-0">
+             {avatarUrl ? (
+               <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+             ) : (
+               <UserCircle size={32} weight="fill" className="text-foreground/30" />
+             )}
           </div>
           <div className="flex-1">
             <div className="bg-foreground/5 rounded-2xl rounded-tl-none p-3 px-4 inline-block">
@@ -160,7 +190,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
               </span>
               <button 
                 onClick={() => setReplyTo(comment.id)} 
-                className="text-xs font-semibold text-foreground/60 hover:text-accent"
+                className="text-[10px] font-bold uppercase tracking-widest text-foreground/50 hover:text-accent transition-colors"
               >
                 Reply
               </button>
@@ -171,7 +201,7 @@ export default function CommentSection({ storyId, initialComments = [] }) {
                   const count = comment.reactions?.[emo.id] || 0;
                   const isSelected = userReactions[comment.id] === emo.id;
                   
-                  // Chỉ hiển thị các nút chưa có ai bấm nếu user muốn đổi, hoặc hiển thị tất cả nếu có người bấm rồi
+                  // Only show emojis that haven't been clicked if user wants to change, or show all if already clicked by someone
                   return (
                      <button 
                        key={emo.id} 

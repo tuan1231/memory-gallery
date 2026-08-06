@@ -117,17 +117,43 @@ export default function MasonryItem({ story }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500 ease-out pointer-events-none" />
               
               <div 
-                className="absolute bottom-0 left-0 right-0 p-6 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none"
+                className="absolute bottom-0 left-0 right-0 p-6 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none flex justify-between items-end gap-4"
                 style={{ transform: "translateZ(40px)" }} // 3D pop effect for text
               >
-                <h3 className="text-white text-2xl font-bold tracking-tight mb-1 leading-tight drop-shadow-md">{story.title}</h3>
-                <p className="text-white/90 text-xs tracking-[0.1em] uppercase font-medium">{date}</p>
+                <div>
+                  <h3 className="text-white text-2xl font-bold tracking-tight mb-1 leading-tight drop-shadow-md">{story.title}</h3>
+                  <p className="text-white/90 text-xs tracking-[0.1em] uppercase font-medium">{date}</p>
+                </div>
+                {story.authorProfile && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0" title={story.authorProfile.display_name || story.authorProfile.username}>
+                    {story.authorProfile.avatar_url ? (
+                      <img src={story.authorProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-black/40 flex items-center justify-center font-bold text-xs text-white">
+                        {(story.authorProfile.display_name || story.authorProfile.username || '?').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           ) : (
             <div className="p-8 flex flex-col justify-between h-full bg-card-bg group-hover:bg-foreground/5 transition-colors duration-500 border border-border rounded-2xl">
               <div style={{ transform: "translateZ(30px)" }}>
-                <p className="text-accent text-xs font-bold tracking-[0.1em] uppercase mb-4">{date}</p>
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-accent text-xs font-bold tracking-[0.1em] uppercase">{date}</p>
+                  {story.authorProfile && (
+                    <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-border/50" title={story.authorProfile.display_name || story.authorProfile.username}>
+                      {story.authorProfile.avatar_url ? (
+                        <img src={story.authorProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-foreground/10 flex items-center justify-center font-bold text-[10px] text-foreground/50">
+                          {(story.authorProfile.display_name || story.authorProfile.username || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <h3 className="text-foreground text-2xl font-bold tracking-tight mb-4 leading-tight drop-shadow-sm">{story.title}</h3>
                 <p className="text-foreground/70 line-clamp-4 leading-relaxed">{story.content}</p>
               </div>

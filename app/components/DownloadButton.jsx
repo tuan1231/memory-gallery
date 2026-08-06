@@ -31,7 +31,7 @@ export default function DownloadButton({ url, title }) {
         }
       }
 
-      // Fallback cho Máy tính
+      // Fallback for Desktop
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -42,9 +42,9 @@ export default function DownloadButton({ url, title }) {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      if (error.name !== 'AbortError') { // Bỏ qua lỗi khi user hủy Share
+      if (error.name !== 'AbortError') { // Ignore error when user cancels Share
         console.error("Download failed", error);
-        alert("Tải file thất bại. Vui lòng thử lại!");
+        alert("Download failed. Please try again!");
       }
     } finally {
       setDownloading(false);
@@ -58,7 +58,7 @@ export default function DownloadButton({ url, title }) {
       className="flex items-center gap-2 bg-foreground/10 hover:bg-foreground/20 text-foreground px-5 py-2.5 rounded-full font-bold transition-colors uppercase tracking-[0.1em] text-xs disabled:opacity-50"
     >
       <DownloadSimple size={16} weight="bold" />
-      {downloading ? "Đang tải..." : "Tải về"}
+      {downloading ? "Downloading..." : "Download"}
     </button>
   );
 }

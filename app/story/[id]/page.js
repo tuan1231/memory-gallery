@@ -1,4 +1,5 @@
 import { getStoryById, getStories, getCommentsByStoryId } from '../../lib/data';
+import { getSession, getProfiles } from '../../lib/profile';
 import Link from 'next/link';
 import StoryActions from '../../components/StoryActions';
 import MasonryItem from '../../components/MasonryItem';
@@ -12,6 +13,8 @@ export default async function StoryDetail({ params }) {
   const story = await getStoryById(id);
   const allStories = await getStories();
   const comments = await getCommentsByStoryId(id);
+  const session = await getSession();
+  const profiles = await getProfiles();
 
   if (!story) {
     return (
@@ -83,9 +86,28 @@ export default async function StoryDetail({ params }) {
         
         {/* Right Side: Scrollable Text Content */}
         <div className="py-4 lg:py-8 flex flex-col h-full">
-          <p className="text-accent font-bold mb-4 tracking-[0.1em] uppercase text-xs">
-            {date}
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-accent font-bold tracking-[0.1em] uppercase text-xs">
+              {date}
+            </p>
+            {story.authorProfile && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Posted by</span>
+                <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full">
+                  <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
+                    {story.authorProfile.avatar_url ? (
+                      <img src={story.authorProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-foreground/10 flex items-center justify-center font-bold text-[10px] text-foreground/50">
+                        {(story.authorProfile.display_name || story.authorProfile.username || '?').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-foreground/80">{story.authorProfile.display_name || story.authorProfile.username}</span>
+                </div>
+              </div>
+            )}
+          </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-8 leading-[1.1]">{story.title}</h1>
           
           <div className="text-lg md:text-xl text-foreground/80 leading-relaxed whitespace-pre-wrap flex-grow font-medium">
@@ -97,7 +119,7 @@ export default async function StoryDetail({ params }) {
             <StoryActions storyId={story.id} isArchived={story.is_archived} />
           </div>
 
-          <CommentSection storyId={story.id} initialComments={comments} />
+          <CommentSection storyId={story.id} initialComments={comments} currentUser={session} profiles={profiles} />
         </div>
       </div>
 

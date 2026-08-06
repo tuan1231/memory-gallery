@@ -53,3 +53,46 @@ export async function logout() {
   cookieStore.delete('auth_session');
   redirect('/login');
 }
+
+export async function changePassword(formData) {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  if (!sessionToken) return { error: 'Unauthorized' };
+  
+  const session = await decryptSession(sessionToken);
+  if (!session) return { error: 'Unauthorized' };
+
+  const oldPassword = formData.get('oldPassword');
+  const newPassword = formData.get('newPassword');
+
+  if (!oldPassword || !newPassword) {
+    return { error: 'Please provide all information.' };
+  }
+
+  // Get current password from DB
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('password')
+    .eq('id', session.id)
+    .single();
+
+  if (error || !profile) {
+    return { error: 'System error when loading user data.' };
+  }
+
+  if (profile.password !== oldPassword) {
+    return { error: 'Incorrect current password.' };
+  }
+
+  // Update to new password
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ password: newPassword })
+    .eq('id', session.id);
+
+  if (updateError) {
+    return { error: 'Error updating new password.' };
+  }
+
+  return { success: true };
+}

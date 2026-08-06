@@ -61,19 +61,44 @@ export async function createStory(formData) {
   }
 
   const storyId = crypto.randomUUID();
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  let session = null;
+  if (sessionToken) {
+    session = await decryptSession(sessionToken);
+  }
 
-  const { error: insertError } = await supabase
-    .from('stories')
-    .insert({
-      id: storyId,
-      title,
-      content,
-      image_url: imageUrl,
-    });
+  const payload = {
+    id: storyId,
+    title,
+    content,
+    image_url: imageUrl,
+  };
 
-  if (insertError) {
-    console.error('Insert error:', insertError);
-    throw new Error('Failed to save memory.');
+  try {
+    const { error: insertError } = await supabase
+      .from('stories')
+      .insert({ ...payload, author_id: session?.id });
+      
+    if (insertError) {
+      if (insertError.message.includes('Could not find') || insertError.code === '42703') {
+        throw new Error('Column not found fallback');
+      }
+      throw insertError;
+    }
+  } catch (err) {
+    if (err.message === 'Column not found fallback' || err.message?.includes('Could not find') || err.code === '42703') {
+      const { error: fallbackError } = await supabase
+        .from('stories')
+        .insert(payload);
+      if (fallbackError) {
+        console.error('Insert fallback error:', fallbackError);
+        throw new Error('Failed to save memory.');
+      }
+    } else {
+      console.error('Insert error:', err);
+      throw new Error('Failed to save memory.');
+    }
   }
 
   return storyId;
@@ -94,7 +119,7 @@ export async function archiveStory(id) {
   }
 
   if (!data || data.length === 0) {
-    throw new Error('Lưu trữ thất bại! Hãy kiểm tra lại Supabase: Bảng "stories" đang bị chặn quyền UPDATE bởi RLS. Vui lòng tắt RLS hoặc thêm policy cho phép UPDATE nhé.');
+    throw new Error('Archive failed! Please check Supabase: The "stories" table is blocked by RLS UPDATE policy. Please disable RLS or add a policy allowing UPDATE.');
   }
 }
 
@@ -113,7 +138,7 @@ export async function restoreStory(id) {
   }
 
   if (!data || data.length === 0) {
-    throw new Error('Khôi phục thất bại! Bị chặn quyền UPDATE bởi RLS trên Supabase.');
+    throw new Error('Restore failed! Blocked by RLS UPDATE policy on Supabase.');
   }
 }
 
@@ -145,7 +170,7 @@ export async function deleteStoryPermanently(id) {
   }
 
   if (!data || data.length === 0) {
-    throw new Error('Xóa thất bại! Bảng "stories" đang bị chặn quyền DELETE bởi RLS trên Supabase. Vui lòng tắt RLS hoặc thêm policy cho phép DELETE nhé.');
+    throw new Error('Deletion failed! The "stories" table is blocked by RLS DELETE policy on Supabase. Please disable RLS or add a policy allowing DELETE.');
   }
 
   // Delete image from storage if it exists
@@ -204,32 +229,138 @@ export async function deleteMapPlace(id) {
   }
 
   if (!data || data.length === 0) {
-    throw new Error('Xóa thất bại! Bảng "love_map_places" đang bị chặn quyền DELETE bởi RLS trên Supabase.');
+    throw new Error('Deletion failed! The "love_map_places" table is blocked by RLS DELETE policy on Supabase.');
+  }
+  return true;
+}
+
+// Helper to create notifications with schema cache fallback
+async function createNotification(payload) {
+  let { error: notifErr } = await supabase.from('notifications').insert(payload);
+  
+  if (notifErr && (notifErr.code === '42703' || notifErr.code === 'PGRST204' || notifErr.message.includes('Could not find'))) {
+    delete payload.comment_id;
+    const { error: fallbackErr } = await supabase.from('notifications').insert(payload);
+    if (fallbackErr) console.error('Notification fallback error:', fallbackErr);
+  } else if (notifErr) {
+    console.error('Failed to create notification:', notifErr);
   }
 }
 
-export async function addComment(storyId, authorName, content, parentId = null) {
-  if (!authorName || !content) {
-    throw new Error('Vui lòng nhập tên và nội dung bình luận!');
+// Helper to process all comment notifications
+async function processCommentNotifications(storyId, parentId, data, session, authorName, avatarUrl) {
+  try {
+    // Find who owns the story
+    const { data: storyData } = await supabase.from('stories').select('author_id').eq('id', storyId).single();
+    
+    // Notify story owner
+    if (storyData && storyData.author_id && storyData.author_id !== session.id) {
+      await createNotification({
+        user_id: storyData.author_id,
+        actor_name: authorName,
+        actor_avatar: avatarUrl,
+        action_type: 'comment',
+        story_id: storyId,
+        comment_id: data?.id
+      });
+    }
+
+    // Notify parent comment owner if it's a reply
+    if (parentId) {
+      const { data: parentComment } = await supabase.from('comments').select('author_name').eq('id', parentId).single();
+      if (parentComment && parentComment.author_name) {
+        // Try to match author_name to a profile
+        const { data: parentProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .or(`display_name.eq."${parentComment.author_name}",username.eq."${parentComment.author_name}"`)
+          .single();
+          
+        if (
+          parentProfile && 
+          parentProfile.id && 
+          parentProfile.id !== session.id && 
+          parentProfile.id !== storyData?.author_id
+        ) {
+          await createNotification({
+            user_id: parentProfile.id,
+            actor_name: authorName,
+            actor_avatar: avatarUrl,
+            action_type: 'reply', // Using action_type 'reply'
+            story_id: storyId,
+            comment_id: data?.id
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Notification process error:', err);
+  }
+}
+
+export async function addComment(storyId, content, parentId = null) {
+  if (!content) {
+    throw new Error('Please enter your comment!');
   }
   
-  const { data, error } = await supabase
-    .from('comments')
-    .insert({
-      story_id: storyId,
-      author_name: authorName,
-      content,
-      parent_id: parentId
-    })
-    .select()
-    .single();
+  // Enforce auth and get current user
+  const username = await requireAuth();
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  const session = await decryptSession(sessionToken);
+  
+  const authorName = session.display_name || session.username || username;
+  const avatarUrl = session.avatar_url;
 
-  if (error) {
-    console.error('Insert comment error:', error);
-    throw new Error(`Lỗi từ CSDL: ${error.message} | Details: ${error.details || ''} | Hint: ${error.hint || ''}`);
+  const payload = {
+    story_id: storyId,
+    author_name: authorName,
+    content,
+    parent_id: parentId
+  };
+
+  try {
+    // Try to insert with avatar_url if the column exists
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({ ...payload, avatar_url: avatarUrl })
+      .select()
+      .single();
+
+    if (error) {
+      // If it's a column not found error, fallback
+      if (error.message.includes('Could not find') || error.code === '42703') {
+        throw new Error('Column not found fallback');
+      }
+      throw error;
+    }
+    
+    // Process notifications
+    await processCommentNotifications(storyId, parentId, data, session, authorName, avatarUrl);
+    
+    return data;
+  } catch (err) {
+    // Fallback: insert without avatar_url
+    if (err.message === 'Column not found fallback' || err.message?.includes('Could not find') || err.code === '42703') {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert(payload)
+        .select()
+        .single();
+        
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      // Process notifications
+      await processCommentNotifications(storyId, parentId, data, session, authorName, avatarUrl);
+      
+      return data;
+    }
+    
+    console.error('Insert comment error:', err);
+    throw new Error(`Database error: ${err.message || 'Unknown error'}`);
   }
-
-  return data;
 }
 
 export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
@@ -239,11 +370,11 @@ export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
     .eq('id', commentId)
     .single();
     
-  if (fetchError) throw new Error('Không tìm thấy bình luận');
+  if (fetchError) throw new Error('Comment not found');
   
   const currentReactions = comment.reactions || {};
   
-  // Xóa emoji cũ nếu có
+  // Remove old emoji if it exists
   if (oldEmoji && currentReactions[oldEmoji] > 0) {
     currentReactions[oldEmoji] -= 1;
     if (currentReactions[oldEmoji] === 0) {
@@ -251,7 +382,7 @@ export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
     }
   }
   
-  // Thêm emoji mới nếu có
+  // Add new emoji if it exists
   if (newEmoji) {
     currentReactions[newEmoji] = (currentReactions[newEmoji] || 0) + 1;
   }
@@ -265,8 +396,53 @@ export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
     
   if (error) {
     console.error('Update reaction error:', error);
-    throw new Error('Thả biểu cảm thất bại');
+    throw new Error('Failed to react');
   }
   
   return data;
+}
+
+export async function getNotifications() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  if (!sessionToken) return [];
+  
+  const session = await decryptSession(sessionToken);
+  if (!session) return [];
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', session.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function markNotificationsAsRead() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('auth_session')?.value;
+  if (!sessionToken) return false;
+  
+  const session = await decryptSession(sessionToken);
+  if (!session) return false;
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', session.id)
+    .eq('is_read', false);
+
+  if (error) {
+    console.error('Error marking notifications as read:', error);
+    return false;
+  }
+
+  return true;
 }

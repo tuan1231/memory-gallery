@@ -1,15 +1,19 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Moon, Sun, Plus, List, X, MapPin, Clock, Archive } from '@phosphor-icons/react';
+import { Moon, Sun, Plus, List, X, MapPin, Clock, Archive, Bell } from '@phosphor-icons/react';
+import { getNotifications, markNotificationsAsRead } from '../lib/actions';
 
 export default function Navbar({ user }) {
   const [theme, setTheme] = useState('light');
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -22,6 +26,26 @@ export default function Navbar({ user }) {
       setTheme('dark');
       document.documentElement.classList.add('dark');
     }
+  }, []);
+
+  // Fetch notifications
+  useEffect(() => {
+    if (user) {
+      getNotifications().then(data => {
+        setNotifications(data || []);
+      });
+    }
+  }, [user, pathname]);
+
+  // Handle click outside for notifications
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Close mobile menu on route change
@@ -50,6 +74,17 @@ export default function Navbar({ user }) {
     localStorage.setItem('theme', newTheme);
   };
 
+  const handleToggleNotifications = async () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications) {
+      const hasUnread = notifications.some(n => !n.is_read);
+      if (hasUnread) {
+        await markNotificationsAsRead();
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      }
+    }
+  };
+
   const navLinks = [
     { href: '/map', label: 'Map', icon: MapPin },
     { href: '/timeline', label: 'Timeline', icon: Clock },
@@ -59,6 +94,7 @@ export default function Navbar({ user }) {
   const isActive = (href) => pathname === href;
 
   const avatarLetter = user?.displayName?.[0]?.toUpperCase() || '?';
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <>
@@ -96,6 +132,63 @@ export default function Navbar({ user }) {
             >
               {mounted && (theme === 'light' ? <Moon size={18} weight="bold" /> : <Sun size={18} weight="bold" />)}
             </button>
+            
+            {/* Notification Bell */}
+            {user && (
+              <div className="relative" ref={notifRef}>
+                <button 
+                  onClick={handleToggleNotifications}
+                  className="p-2.5 rounded-full hover:bg-foreground/5 transition-colors relative"
+                >
+                  <Bell size={18} weight={unreadCount > 0 ? "fill" : "bold"} className={unreadCount > 0 ? "text-accent" : ""} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background"></span>
+                  )}
+                </button>
+
+                {/* Dropdown */}
+                {showNotifications && (
+                  <div className="absolute top-12 right-0 w-80 bg-background border border-border/50 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-border/30 bg-foreground/5">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Notifications</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-sm text-foreground/50">
+                        No notifications yet.
+                      </div>) : (
+                        notifications.map(notif => (
+                          <Link 
+                            key={notif.id}
+                            href={`/story/${notif.story_id}`}
+                            onClick={() => setShowNotifications(false)}
+                            className={`flex gap-3 p-4 hover:bg-foreground/5 transition-colors border-b border-border/10 last:border-0 ${!notif.is_read ? 'bg-accent/5' : ''}`}
+                          >
+                            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-foreground/10 border border-border/50">
+                              {notif.actor_avatar ? (
+                                <img src={notif.actor_avatar} alt={notif.actor_name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center font-bold text-xs text-foreground/50">
+                                  {notif.actor_name?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm leading-tight">
+                                <span className="font-bold">{notif.actor_name}</span> {notif.action_type === 'reply' ? 'replied to your comment.' : 'commented on your photo.'}
+                              </p>
+                              <p className="text-[10px] text-foreground/50 mt-1 uppercase tracking-wider">
+                                {new Date(notif.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             
             <Link 
               href="/create" 
