@@ -2,11 +2,11 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createStory } from '../lib/actions';
+import { createStory } from '../../lib/actions';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import imageCompression from 'browser-image-compression';
-import InteractiveCat from '../components/InteractiveCat';
+import InteractiveCat from '../../components/InteractiveCat';
 
 export default function CreatePage() {
   const [error, setError] = useState('');

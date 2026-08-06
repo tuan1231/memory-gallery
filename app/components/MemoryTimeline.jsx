@@ -74,7 +74,7 @@ function MonthCalendar({ monthData }) {
 }
 
 // Normal Card for a single story
-function StoryCard({ story, dateStr }) {
+function StoryCard({ story, dateStr, priority = false }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   
@@ -131,6 +131,7 @@ function StoryCard({ story, dateStr }) {
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 quality={85}
+                priority={priority}
                 className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
               />
             )
@@ -174,7 +175,7 @@ function StoryCard({ story, dateStr }) {
 }
 
 // Stacked Card for multiple stories on the same day
-function StackedStoryCard({ stories, dateStr, onSelect }) {
+function StackedStoryCard({ stories, dateStr, onSelect, priority = false }) {
   const displayStories = stories.slice(0, 3);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -252,6 +253,7 @@ function StackedStoryCard({ stories, dateStr, onSelect }) {
                       fill 
                       sizes="(max-width: 768px) 100vw, 50vw" 
                       quality={85} 
+                      priority={priority && isTop}
                       className="object-cover" 
                     />
                   )
@@ -580,12 +582,13 @@ export default function MemoryTimeline({ stories }) {
                 }`}
               >
                 {node.stories.length === 1 ? (
-                  <StoryCard story={node.stories[0]} dateStr={node.dateStr} isLeft={isLeft} />
+                  <StoryCard story={node.stories[0]} dateStr={node.dateStr} isLeft={isLeft} priority={i < 4} />
                 ) : (
                   <StackedStoryCard 
                     stories={node.stories} 
                     dateStr={node.dateStr} 
                     onSelect={() => setSelectedDayId(node.id)} 
+                    priority={i < 4}
                   />
                 )}
               </div>

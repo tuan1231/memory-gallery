@@ -1,5 +1,5 @@
-import { getMapPlaces } from '../lib/data';
-import DynamicMap from '../components/DynamicMap';
+import { getMapPlaces } from '../../lib/data';
+import DynamicMap from '../../components/DynamicMap';
 import Link from 'next/link';
 
 export const revalidate = 0;
