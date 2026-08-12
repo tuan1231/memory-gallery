@@ -23,7 +23,9 @@ export default function CreatePage() {
     try {
       const formData = new FormData(formRef.current);
       
-      const imageFile = formData.get('image');
+      let imageFile = formData.get('image');
+      let finalImageUrl = '';
+
       if (imageFile && imageFile.size > 0) {
         if (imageFile.type.startsWith('image/')) {
           const options = {
@@ -33,12 +35,42 @@ export default function CreatePage() {
             fileType: 'image/jpeg',
           };
           const compressedBlob = await imageCompression(imageFile, options);
-          const compressedFile = new File([compressedBlob], imageFile.name, {
+          imageFile = new File([compressedBlob], imageFile.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
           });
-          formData.set('image', compressedFile);
         }
+
+        // Upload to Supabase directly from client
+        const { supabase } = await import('../../lib/supabase');
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const nameParts = imageFile.name.split('.');
+        const ext = nameParts.length > 1 ? '.' + nameParts.pop() : (imageFile.type.startsWith('video/') ? '.mp4' : '.jpg');
+        const filename = `${uniqueSuffix}${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('uploads')
+          .upload(filename, imageFile, {
+            contentType: imageFile.type || 'application/octet-stream',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error('Failed to upload file to storage: ' + uploadError.message);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('uploads')
+          .getPublicUrl(filename);
+
+        finalImageUrl = publicUrlData.publicUrl;
+        
+        // Remove the file from formData so it doesn't get sent to the server action
+        formData.delete('image');
+      }
+
+      if (finalImageUrl) {
+        formData.append('image_url', finalImageUrl);
       }
 
       const newStoryId = await createStory(formData);

@@ -28,9 +28,9 @@ export async function createStory(formData) {
     throw new Error('Please provide a title and a story!');
   }
 
-  let imageUrl = '';
+  let imageUrl = formData.get('image_url') || '';
 
-  if (image && image.size > 0) {
+  if (!imageUrl && image && image.size > 0) {
     const bytes = await image.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
