@@ -84,7 +84,7 @@ export async function GET(request) {
       // Resend allows sending to an array of emails
       emailPromises.push(
         resend.emails.send({
-          from: 'Memory Gallery <onboarding@resend.dev>', // If they haven't verified a domain, resend allows testing with onboarding@resend.dev to verified emails
+          from: 'Memory Gallery <hello@memoryhlt.site>', // Changed to use your verified domain
           to: validEmails,
           subject: `Reminder: ${dateItem.title}`,
           html: emailBody,

@@ -80,8 +80,7 @@ export async function deleteImportantDate(id) {
     const { error } = await supabase
       .from('important_dates')
       .delete()
-      .eq('id', id)
-      .eq('user_id', session.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting important date:', error);
