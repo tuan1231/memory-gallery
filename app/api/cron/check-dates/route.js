@@ -47,23 +47,16 @@ export async function GET(request) {
       return NextResponse.json({ message: 'No important dates for today.' });
     }
 
-    // Fetch user profiles to get emails
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('email, display_name, username')
-      .not('email', 'is', null);
-
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
+    // Use environment variable for target emails
+    const targetEmailsStr = process.env.TARGET_EMAILS;
+    let validEmails = [];
+    
+    if (targetEmailsStr) {
+      validEmails = targetEmailsStr.split(',').map(e => e.trim()).filter(e => e);
     }
 
-    const validEmails = profiles
-      .filter(p => p.email && p.email.trim() !== '')
-      .map(p => p.email);
-
     if (validEmails.length === 0) {
-      return NextResponse.json({ message: 'No valid emails found to send to.' });
+      return NextResponse.json({ message: 'No valid emails found to send to. Please set TARGET_EMAILS in .env.local' });
     }
 
     const emailPromises = [];

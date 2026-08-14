@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Moon, Sun, Plus, List, X, MapPin, Clock, Archive, Bell } from '@phosphor-icons/react';
+import { Moon, Sun, Plus, List, X, MapPin, Clock, Archive, Bell, CalendarBlank } from '@phosphor-icons/react';
 import { getNotifications, markNotificationsAsRead } from '../lib/actions';
 
 export default function Navbar({ user }) {
@@ -88,6 +88,7 @@ export default function Navbar({ user }) {
   const navLinks = [
     { href: '/map', label: 'Map', icon: MapPin },
     { href: '/timeline', label: 'Timeline', icon: Clock },
+    { href: '/important-dates', label: 'Dates', icon: CalendarBlank },
     { href: '/archive', label: 'Archive', icon: Archive },
   ];
 

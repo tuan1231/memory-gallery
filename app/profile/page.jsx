@@ -3,7 +3,6 @@ import { logout } from '../actions/auth';
 import { redirect } from 'next/navigation';
 import AvatarDisplay from '../components/AvatarDisplay';
 import ChangePasswordForm from '../components/ChangePasswordForm';
-import ImportantDatesManager from '../components/ImportantDatesManager';
 import { Camera, User, ChatCircle, Heart, SignOut, CalendarBlank } from '@phosphor-icons/react/dist/ssr';
 
 export default async function ProfilePage() {
@@ -148,9 +147,6 @@ export default async function ProfilePage() {
 
               {/* Password Change Form */}
               <ChangePasswordForm />
-
-              {/* Important Dates Manager */}
-              <ImportantDatesManager userId={session.id} />
             </div>
           </div>
 
