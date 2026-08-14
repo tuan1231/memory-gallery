@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -84,7 +84,7 @@ export async function GET(request) {
       // Resend allows sending to an array of emails
       emailPromises.push(
         resend.emails.send({
-          from: 'Memory Gallery <hello@memoryhlt.site>', // Changed to use your verified domain
+          from: 'Memory Gallery <hello@memoryhtt.site>', // Changed to use your verified domain
           to: validEmails,
           subject: `Reminder: ${dateItem.title}`,
           html: emailBody,
@@ -92,7 +92,19 @@ export async function GET(request) {
       );
     }
 
-    await Promise.all(emailPromises);
+    const results = await Promise.all(emailPromises);
+
+    // Resend SDK returns { data, error }. Let's check if any failed.
+    const errors = results.filter(res => res.error).map(res => res.error);
+    
+    if (errors.length > 0) {
+      console.error('Resend API Errors:', errors);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to send some or all emails. See console for details.',
+        details: errors
+      }, { status: 500 });
+    }
 
     return NextResponse.json({ 
       success: true, 

@@ -193,14 +193,15 @@ export default function ImportantDatesManager({ userId }) {
                   
                   {/* Content Block */}
                   <div className="p-8 flex-1 flex flex-col relative">
-                    <div className="flex justify-between items-start gap-4 mb-4">
-                      <h4 className="text-xl font-bold tracking-tight">{item.title}</h4>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-foreground/30 hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
-                      >
-                        <Trash size={16} weight="bold" />
-                      </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="absolute top-6 right-6 w-8 h-8 rounded-full flex items-center justify-center text-foreground/30 hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0 z-10"
+                    >
+                      <Trash size={16} weight="bold" />
+                    </button>
+                    
+                    <div className="mb-4 pr-12">
+                      <h4 className="text-xl font-bold tracking-tight break-words">{item.title}</h4>
                     </div>
                     
                     <div 

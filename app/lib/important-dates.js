@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from './supabase';
+import { supabaseAdmin as supabase } from './supabase-admin';
 import { cookies } from 'next/headers';
 import { decryptSession } from './session';
 import { revalidatePath } from 'next/cache';
