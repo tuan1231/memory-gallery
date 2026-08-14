@@ -25,15 +25,15 @@ const QuillEditor = ({ value, onChange }) => {
             toolbar: [
               [{ 'header': [1, 2, 3, false] }],
               ['bold', 'italic', 'underline', 'strike'],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
               ['link'],
               ['clean']
             ]
           }
         });
-        
+
         quillRef.current = q;
-        
+
         q.on('text-change', () => {
           onChange(q.root.innerHTML);
         });
@@ -94,6 +94,7 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
   const [emailContent, setEmailContent] = useState('');
   const [title, setTitle] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('custom');
+  const [recipient, setRecipient] = useState('both');
   const formRef = useRef(null);
   const reduce = useReducedMotion();
 
@@ -119,9 +120,9 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    const formData = new FormData(formRef.current);
-    
-    // Add the rich text content manually
+    const formData = new FormData(e.target);
+    // Explicitly set the custom recipient state in formData so server action gets it
+    formData.set('recipient', recipient);
     formData.set('email_content', emailContent);
 
     if (!emailContent || emailContent.trim() === '' || emailContent === '<p><br></p>') {
@@ -129,16 +130,31 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
       return;
     }
 
+    // Create the main event
     const res = await addImportantDate(formData);
+
+    // If it's a birthday template, also create the auto-reminder for the creator
+    if (res.success && selectedTemplate === 'birthday') {
+      const reminderFormData = new FormData();
+      reminderFormData.append('title', `Nhắc nhở: Sắp đến sinh nhật của ${partnerName} rồi!`);
+      reminderFormData.append('date', formData.get('date'));
+      reminderFormData.append('is_recurring', formData.get('is_recurring') || '');
+      reminderFormData.append('recipient', 'me');
+      reminderFormData.append('email_content', `<p>Chào ${userName},</p><p><br></p><p>Hôm nay là sinh nhật của ${partnerName} đấy! Hãy chắc chắn rằng bạn đã chuẩn bị sẵn sàng một món quà thật ý nghĩa, một bó hoa tươi thắm và một kế hoạch hẹn hò lãng mạn nhé.</p><p><br></p><p>Chúc hai bạn có một ngày kỷ niệm thật tuyệt vời!</p>`);
+
+      await addImportantDate(reminderFormData);
+    }
+
     if (res.success) {
       formRef.current?.reset();
       setEmailContent('');
       setTitle('');
       setSelectedTemplate('custom');
+      setRecipient('both');
       setIsAdding(false);
       fetchDates();
     } else {
-      alert(res.error || 'Failed to add important date.');
+      alert(res.error || 'Failed to add date');
     }
   };
 
@@ -155,10 +171,10 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 relative">
-      
+
       {/* Left Column: Header & Actions (Sticky) */}
       <div className="lg:col-span-4 lg:sticky lg:top-32 lg:self-start lg:h-auto z-10">
-        <motion.div 
+        <motion.div
           initial={reduce ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -208,7 +224,7 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                 month: 'short',
                 year: 'numeric'
               });
-              
+
               const day = dateObj.getDate().toString().padStart(2, '0');
               const month = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
 
@@ -226,7 +242,7 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                     <span className="text-4xl md:text-5xl font-bold tracking-tighter leading-none mb-1">{day}</span>
                     <span className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/60">{month}</span>
                   </div>
-                  
+
                   {/* Content Block */}
                   <div className="p-8 flex-1 flex flex-col relative">
                     <button
@@ -235,16 +251,16 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                     >
                       <Trash size={16} weight="bold" />
                     </button>
-                    
+
                     <div className="mb-4 pr-12">
                       <h4 className="text-xl font-bold tracking-tight break-words">{item.title}</h4>
                     </div>
-                    
-                    <div 
+
+                    <div
                       className="text-sm text-foreground/80 leading-relaxed mb-6 flex-1 quill-content"
                       dangerouslySetInnerHTML={{ __html: item.email_content }}
                     />
-                    
+
                     <div className="flex items-center gap-4 mt-auto">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/50">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent/60"></span>
@@ -269,14 +285,14 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
       <AnimatePresence>
         {isAdding && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAdding(false)}
               className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -287,8 +303,8 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                   <h3 className="text-xl font-bold tracking-tight mb-1">New Reminder</h3>
                   <p className="text-xs text-foreground/50 uppercase tracking-[0.1em] font-medium">Compose your message</p>
                 </div>
-                <button 
-                  onClick={() => setIsAdding(false)} 
+                <button
+                  onClick={() => setIsAdding(false)}
                   className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-foreground/5 transition-colors"
                 >
                   <X size={20} />
@@ -306,12 +322,16 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                         setSelectedTemplate(temp.id);
                         setTitle(temp.title);
                         setEmailContent(temp.content);
+                        if (temp.id === 'birthday') {
+                          setRecipient('partner'); // Sinh nhật auto send to partner
+                        } else {
+                          setRecipient('both');
+                        }
                       }}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-                        selectedTemplate === temp.id 
-                          ? 'bg-foreground text-background border-foreground' 
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border ${selectedTemplate === temp.id
+                          ? 'bg-foreground text-background border-foreground'
                           : 'bg-background text-foreground/70 border-border/40 hover:border-foreground/30 hover:bg-foreground/5'
-                      }`}
+                        }`}
                     >
                       {temp.label}
                     </button>
@@ -344,19 +364,60 @@ export default function ImportantDatesManager({ userId, userName = 'Bạn', part
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 py-2 border-b border-border/20 pb-6">
-                  <input 
-                    type="checkbox" 
-                    name="is_recurring" 
-                    id="is_recurring" 
-                    defaultChecked
-                    className="w-4 h-4 rounded border-border/60 text-foreground focus:ring-foreground/50 accent-foreground cursor-pointer"
-                  />
-                  <label htmlFor="is_recurring" className="text-sm font-medium text-foreground/70 cursor-pointer">
-                    Repeat this reminder every year
-                  </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 border-b border-border/20 pb-6 gap-4">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      name="is_recurring"
+                      id="is_recurring"
+                      defaultChecked
+                      className="w-4 h-4 rounded border-border/60 text-foreground focus:ring-foreground/50 accent-foreground cursor-pointer"
+                    />
+                    <label htmlFor="is_recurring" className="text-sm font-medium text-foreground/70 cursor-pointer">
+                      Repeat this reminder every year
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-2 w-full sm:w-auto">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/50">Gửi thư này cho ai?</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="recipientType"
+                          value="both"
+                          checked={recipient === 'both'}
+                          onChange={() => setRecipient('both')}
+                          className="accent-foreground"
+                        />
+                        <span className="text-sm font-medium text-foreground/80">Cả hai</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="recipientType"
+                          value="me"
+                          checked={recipient === 'me'}
+                          onChange={() => setRecipient('me')}
+                          className="accent-foreground"
+                        />
+                        <span className="text-sm font-medium text-foreground/80">Chỉ gửi cho tôi</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="recipientType"
+                          value="partner"
+                          checked={recipient === 'partner'}
+                          onChange={() => setRecipient('partner')}
+                          className="accent-foreground"
+                        />
+                        <span className="text-sm font-medium text-foreground/80">Chỉ gửi cho người ấy</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/50 mb-3">Email Message</label>
                   <div className="rounded-xl overflow-hidden border border-border/40 focus-within:border-foreground/50 transition-colors bg-background">

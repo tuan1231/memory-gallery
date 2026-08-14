@@ -47,16 +47,14 @@ export async function GET(request) {
       return NextResponse.json({ message: 'No important dates for today.' });
     }
 
-    // Use environment variable for target emails
-    const targetEmailsStr = process.env.TARGET_EMAILS;
-    let validEmails = [];
-    
-    if (targetEmailsStr) {
-      validEmails = targetEmailsStr.split(',').map(e => e.trim()).filter(e => e);
-    }
+    // Fetch all profiles to map emails
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, email');
 
-    if (validEmails.length === 0) {
-      return NextResponse.json({ message: 'No valid emails found to send to. Please set TARGET_EMAILS in .env.local' });
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
 
     const emailPromises = [];
@@ -80,12 +78,41 @@ export async function GET(request) {
         </div>
       `;
 
-      // We send one email to all valid emails (or loop through them)
-      // Resend allows sending to an array of emails
+      // Determine recipient emails
+      let toEmails = [];
+      const creatorProfile = profiles.find(p => p.id === dateItem.user_id);
+      const partnerProfile = profiles.find(p => p.id !== dateItem.user_id);
+      
+      const creatorEmail = creatorProfile?.email;
+      const partnerEmail = partnerProfile?.email;
+
+      if (dateItem.recipient === 'me' && creatorEmail) {
+        toEmails = [creatorEmail];
+      } else if (dateItem.recipient === 'partner' && partnerEmail) {
+        toEmails = [partnerEmail];
+      } else {
+        // 'both' or fallback
+        toEmails = [creatorEmail, partnerEmail].filter(Boolean);
+      }
+
+      // Fallback to env variables if DB profiles lack emails
+      if (toEmails.length === 0) {
+        const targetEmailsStr = process.env.TARGET_EMAILS;
+        if (targetEmailsStr) {
+          toEmails = targetEmailsStr.split(',').map(e => e.trim()).filter(e => e);
+        }
+      }
+
+      if (toEmails.length === 0) {
+        console.warn(`No valid emails found for date item: ${dateItem.id}`);
+        continue;
+      }
+
+      // We send one email to the target users
       emailPromises.push(
         resend.emails.send({
           from: 'Memory Gallery <hello@memoryhtt.site>', // Changed to use your verified domain
-          to: validEmails,
+          to: toEmails,
           subject: `Reminder: ${dateItem.title}`,
           html: emailBody,
         })
@@ -108,7 +135,7 @@ export async function GET(request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Sent ${matchingDates.length} reminders to ${validEmails.length} users.` 
+      message: `Sent ${matchingDates.length} reminders.` 
     });
 
   } catch (error) {
