@@ -20,6 +20,7 @@ export async function updateProfile(formData) {
 
   const displayName = formData.get('display_name');
   const bio = formData.get('bio');
+  const email = formData.get('email');
   const avatarFile = formData.get('avatar');
   
   let avatarUrl = session.avatar_url;
@@ -55,6 +56,7 @@ export async function updateProfile(formData) {
       .update({
         display_name: displayName,
         bio: bio,
+        email: email,
         ...(avatarUrl && { avatar_url: avatarUrl })
       })
       .eq('id', session.id)
@@ -98,7 +100,7 @@ export async function updateProfile(formData) {
 export async function getProfiles() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, bio')
+    .select('id, username, display_name, avatar_url, bio, email')
     .order('created_at', { ascending: true });
 
   if (error) {

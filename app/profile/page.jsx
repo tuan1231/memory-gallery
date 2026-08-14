@@ -3,7 +3,8 @@ import { logout } from '../actions/auth';
 import { redirect } from 'next/navigation';
 import AvatarDisplay from '../components/AvatarDisplay';
 import ChangePasswordForm from '../components/ChangePasswordForm';
-import { Camera, User, ChatCircle, Heart, SignOut } from '@phosphor-icons/react/dist/ssr';
+import ImportantDatesManager from '../components/ImportantDatesManager';
+import { Camera, User, ChatCircle, Heart, SignOut, CalendarBlank } from '@phosphor-icons/react/dist/ssr';
 
 export default async function ProfilePage() {
   const session = await getSession();
@@ -109,6 +110,19 @@ export default async function ProfilePage() {
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-foreground/60 mb-3">
+                        Email Address
+                      </label>
+                      <input 
+                        type="email" 
+                        name="email" 
+                        defaultValue={currentUser?.email || ''}
+                        placeholder="For important date reminders"
+                        className="w-full px-5 py-4 bg-background/50 border border-border/60 rounded-xl focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all text-base placeholder:text-foreground/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-foreground/60 mb-3">
                         Short Bio
                       </label>
                       <textarea 
@@ -134,6 +148,9 @@ export default async function ProfilePage() {
 
               {/* Password Change Form */}
               <ChangePasswordForm />
+
+              {/* Important Dates Manager */}
+              <ImportantDatesManager userId={session.id} />
             </div>
           </div>
 
