@@ -62,19 +62,40 @@ export async function GET(request) {
     // Send emails for each matching date
     for (const dateItem of matchingDates) {
       const emailBody = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
-          <h2 style="color: #333; text-align: center;">Memory Gallery Reminder</h2>
-          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-            <h1 style="color: #000; margin-bottom: 5px;">${dateItem.title}</h1>
-            <p style="color: #666; margin-top: 0;">${dateItem.date}</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FFF5F2; padding: 40px 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #FCD5CE; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(244, 151, 142, 0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #F4978E; padding: 30px 20px; text-align: center;">
+              <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Memory Gallery</h2>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 40px 30px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2D1B19; margin: 0 0 10px 0; font-size: 28px; font-weight: 700;">${dateItem.title}</h1>
+                <div style="display: inline-block; background-color: #FFF5F2; color: #F4978E; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; border: 1px solid #FCD5CE;">
+                  ${dateItem.date}
+                </div>
+              </div>
+
+              <div style="font-size: 16px; color: #2D1B19; line-height: 1.8; white-space: pre-wrap; background-color: #FFF5F2; padding: 25px; border-radius: 12px; border: 1px solid #FCD5CE;">
+                ${dateItem.email_content}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding: 20px 30px 30px; text-align: center;">
+              <hr style="border: none; border-top: 1px dashed #FCD5CE; margin: 0 0 20px 0;" />
+              <p style="font-size: 13px; color: #F4978E; margin: 0;">
+                Gửi từ <strong>Memory Gallery</strong>
+              </p>
+              <p style="font-size: 12px; color: #2D1B19; opacity: 0.6; margin: 5px 0 0 0;">
+                Nhắc nhở tự động từ Memory Gallary.
+              </p>
+            </div>
+            
           </div>
-          <div style="font-size: 16px; color: #444; line-height: 1.6; white-space: pre-wrap;">
-            ${dateItem.email_content}
-          </div>
-          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
-          <p style="font-size: 12px; color: #999; text-align: center;">
-            This is an automated reminder from your Memory Gallery app.
-          </p>
         </div>
       `;
 
