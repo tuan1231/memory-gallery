@@ -127,7 +127,7 @@ export async function GET(request) {
                       <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 40px;">
                         <tr>
                           <td align="center" style="background-color: #F4978E;">
-                            <a href="https://memory-gallery-nine.vercel.app/" target="_blank" style="display: inline-block; padding: 14px 32px; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Inter', Arial, sans-serif;">View Gallery</a>
+                            <a href="https://memoryhtt.site/" target="_blank" style="display: inline-block; padding: 14px 32px; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Inter', Arial, sans-serif;">View Gallery</a>
                           </td>
                         </tr>
                       </table>
