@@ -45,6 +45,7 @@ export async function addImportantDate(formData) {
     const date = formData.get('date');
     const email_content = formData.get('email_content');
     const is_recurring = formData.get('is_recurring') === 'on';
+    const recipient = formData.get('recipient') || 'both';
 
     if (!title || !date || !email_content) {
       return { error: 'Please provide all required fields.' };
@@ -57,7 +58,8 @@ export async function addImportantDate(formData) {
         title,
         date,
         email_content,
-        is_recurring
+        is_recurring,
+        recipient
       });
 
     if (error) {
