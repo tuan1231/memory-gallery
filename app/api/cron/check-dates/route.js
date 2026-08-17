@@ -29,17 +29,36 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to fetch dates' }, { status: 500 });
     }
 
-    // Filter dates that match today
+    const dateIn7Days = new Date(today);
+    dateIn7Days.setDate(today.getDate() + 7);
+    const targetMonth7 = dateIn7Days.getMonth() + 1;
+    const targetDay7 = dateIn7Days.getDate();
+    const targetYear7 = dateIn7Days.getFullYear();
+
+    // Filter dates that match today, or 7 days in advance for special reminders
     const matchingDates = dates.filter(item => {
       const itemDate = new Date(item.date);
       const itemMonth = itemDate.getMonth() + 1;
       const itemDay = itemDate.getDate();
       const itemYear = itemDate.getFullYear();
+      
+      const titleLower = item.title.toLowerCase();
+      const isAdvanceReminder = titleLower.includes('nhắc nhở') || titleLower.includes('chuyến đi') || titleLower.includes('du lịch');
 
-      if (item.is_recurring) {
-        return itemMonth === currentMonth && itemDay === currentDay;
+      if (isAdvanceReminder) {
+        // Send 7 days in advance
+        if (item.is_recurring) {
+          return itemMonth === targetMonth7 && itemDay === targetDay7;
+        } else {
+          return itemMonth === targetMonth7 && itemDay === targetDay7 && itemYear === targetYear7;
+        }
       } else {
-        return itemMonth === currentMonth && itemDay === currentDay && itemYear === currentYear;
+        // Send on the exact day
+        if (item.is_recurring) {
+          return itemMonth === currentMonth && itemDay === currentDay;
+        } else {
+          return itemMonth === currentMonth && itemDay === currentDay && itemYear === currentYear;
+        }
       }
     });
 
@@ -62,41 +81,76 @@ export async function GET(request) {
     // Send emails for each matching date
     for (const dateItem of matchingDates) {
       const emailBody = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FFF5F2; padding: 40px 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #FCD5CE; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(244, 151, 142, 0.1);">
-            
-            <!-- Header -->
-            <div style="background-color: #F4978E; padding: 30px 20px; text-align: center;">
-              <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Memory Gallery</h2>
-            </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #FFF5F2; font-family: 'Inter', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #FFF5F2; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <!-- Main Container: Sharp corners, solid thin border -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #FFFFFF; border: 1px solid #F4978E; margin: 0 auto;">
+                  
+                  <!-- Header Area -->
+                  <tr>
+                    <td align="center" style="padding: 40px 40px 0 40px;">
+                      <p style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #F4978E; font-family: 'Inter', Arial, sans-serif;">Memory Gallery</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content Area -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      
+                      <h1 style="margin: 0 0 20px 0; font-size: 28px; color: #2D1B19; font-weight: normal; line-height: 1.4; font-family: 'Lora', 'Times New Roman', serif;">
+                        ${dateItem.title}
+                      </h1>
+                      
+                      <div style="margin-bottom: 30px;">
+                        <span style="display: inline-block; border: 1px solid #FCD5CE; padding: 6px 12px; font-size: 13px; font-family: 'Courier New', monospace; color: #2D1B19; background-color: #FFF5F2;">
+                          ${dateItem.date}
+                        </span>
+                      </div>
+                      
+                      <!-- Divider -->
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                        <tr><td style="border-top: 1px solid #FCD5CE;"></td></tr>
+                      </table>
+                      
+                      <!-- Message -->
+                      <div style="font-size: 15px; color: #2D1B19; line-height: 1.8; text-align: left; white-space: pre-wrap; font-family: 'Inter', Arial, sans-serif;">${dateItem.email_content}</div>
+                      
+                      <!-- Button -->
+                      <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 40px;">
+                        <tr>
+                          <td align="center" style="background-color: #F4978E;">
+                            <a href="https://memory-gallery-nine.vercel.app/" target="_blank" style="display: inline-block; padding: 14px 32px; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Inter', Arial, sans-serif;">View Gallery</a>
+                          </td>
+                        </tr>
+                      </table>
 
-            <!-- Body -->
-            <div style="padding: 40px 30px;">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #2D1B19; margin: 0 0 10px 0; font-size: 28px; font-weight: 700;">${dateItem.title}</h1>
-                <div style="display: inline-block; background-color: #FFF5F2; color: #F4978E; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; border: 1px solid #FCD5CE;">
-                  ${dateItem.date}
-                </div>
-              </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 30px 40px; background-color: #FFF5F2; border-top: 1px solid #FCD5CE;">
+                      <p style="margin: 0; font-size: 13px; color: #2D1B19; opacity: 0.7; line-height: 1.6; font-family: 'Inter', Arial, sans-serif;">
+                        Nhắc nhở tự động từ <strong>Memory Gallery</strong>.<br>
+                        Lưu giữ mọi khoảnh khắc.
+                      </p>
+                    </td>
+                  </tr>
 
-              <div style="font-size: 16px; color: #2D1B19; line-height: 1.8; white-space: pre-wrap; background-color: #FFF5F2; padding: 25px; border-radius: 12px; border: 1px solid #FCD5CE;">
-                ${dateItem.email_content}
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div style="padding: 20px 30px 30px; text-align: center;">
-              <hr style="border: none; border-top: 1px dashed #FCD5CE; margin: 0 0 20px 0;" />
-              <p style="font-size: 13px; color: #F4978E; margin: 0;">
-                Gửi từ <strong>Memory Gallery</strong>
-              </p>
-              <p style="font-size: 12px; color: #2D1B19; opacity: 0.6; margin: 5px 0 0 0;">
-                Nhắc nhở tự động từ Memory Gallary.
-              </p>
-            </div>
-            
-          </div>
-        </div>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `;
 
       // Determine recipient emails
