@@ -66,7 +66,7 @@ function MonthCalendar({ monthData }) {
       </div>
       
       {/* Cards for this month */}
-      <ScrollRevealGrid className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6">
+      <ScrollRevealGrid className="columns-2 lg:columns-3 xl:columns-4 gap-2 sm:gap-4 md:gap-6 space-y-2 sm:space-y-4 md:space-y-6">
         {stories.map(s => <MasonryItem key={s.id} story={s} />)}
       </ScrollRevealGrid>
     </div>
@@ -111,9 +111,9 @@ function StoryCard({ story, dateStr, priority = false }) {
     >
       <motion.div 
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="w-full bg-card-bg/50 backdrop-blur-md rounded-3xl shadow-sm hover:shadow-2xl transition-shadow duration-500 border border-border/50 p-4 md:p-5 group"
+        className="w-full group"
       >
-        <div className="relative rounded-2xl overflow-hidden bg-foreground/5 aspect-[4/5] sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square">
+        <div className="relative rounded-2xl overflow-hidden bg-foreground/5 aspect-square sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square">
           {story.image_url ? (
             isVideo ? (
               <video 
@@ -155,9 +155,9 @@ function StoryCard({ story, dateStr, priority = false }) {
           </div>
         </div>
 
-        <div className="mt-6 px-2 flex flex-col gap-2">
-          <div className="flex items-baseline gap-3">
-            <span className="text-2xl font-bold tracking-tighter text-foreground leading-none">{dateStr}</span>
+        <div className="mt-4 flex flex-col gap-1.5">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xl md:text-2xl font-bold tracking-tighter text-foreground leading-none">{dateStr}</span>
             <div className="flex-1 h-px bg-border/50"></div>
           </div>
           <h4 className="text-xl font-bold text-foreground/90 tracking-tight leading-snug line-clamp-2">
@@ -213,9 +213,9 @@ function StackedStoryCard({ stories, dateStr, onSelect, priority = false }) {
         initial="rest"
         whileHover="hover"
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="w-full bg-card-bg/50 backdrop-blur-md rounded-3xl shadow-sm hover:shadow-2xl transition-shadow duration-500 border border-border/50 p-4 md:p-5 group"
+        className="w-full group"
       >
-        <div className="relative aspect-[4/5] sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square w-full">
+        <div className="relative aspect-square sm:aspect-[4/3] md:aspect-[4/5] lg:aspect-square w-full">
           {[...displayStories].reverse().map((story, reversedIndex) => {
             const originalIndex = displayStories.length - 1 - reversedIndex;
             const isTop = originalIndex === 0;
@@ -280,9 +280,9 @@ function StackedStoryCard({ stories, dateStr, onSelect, priority = false }) {
           </div>
         </div>
 
-        <div className="mt-6 px-2 flex flex-col gap-2 relative z-30">
-          <div className="flex items-baseline gap-3">
-            <span className="text-2xl font-bold tracking-tighter text-foreground leading-none">{dateStr}</span>
+        <div className="mt-4 flex flex-col gap-1.5 relative z-30">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xl md:text-2xl font-bold tracking-tighter text-foreground leading-none">{dateStr}</span>
             <div className="flex-1 h-px bg-border/50"></div>
           </div>
           <h4 className="text-xl font-bold text-foreground/90 tracking-tight leading-snug line-clamp-2">
@@ -430,7 +430,7 @@ export default function MemoryTimeline({ stories }) {
           </p>
         </div>
         
-        <ScrollRevealGrid className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6">
+        <ScrollRevealGrid className="columns-2 lg:columns-3 xl:columns-4 gap-2 sm:gap-4 md:gap-6 space-y-2 sm:space-y-4 md:space-y-6">
           {selectedNode.stories.map(story => (
             <MasonryItem key={story.id} story={story} />
           ))}
@@ -506,9 +506,11 @@ export default function MemoryTimeline({ stories }) {
                 transition={{ duration: 0.6 }}
                 className="relative w-full h-24 flex items-center justify-center my-4"
               >
-                {/* Wavy line down to next element */}
+                {/* Mobile straight line */}
+                <div className="md:hidden absolute top-12 left-[28px] w-0 h-[calc(100%+2rem)] border-l-2 border-dashed border-border/40 z-0"></div>
+                {/* Desktop Wavy line */}
                 <svg 
-                  className="absolute top-12 left-[28px] md:left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+2rem)] md:h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
+                  className="hidden md:block absolute top-12 left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
                   viewBox="-50 0 100 100" 
                   preserveAspectRatio="none"
                 >
@@ -522,8 +524,16 @@ export default function MemoryTimeline({ stories }) {
                   />
                 </svg>
 
+                {/* Mobile Badge */}
                 <div 
-                  className="absolute left-[28px] md:left-1/2 top-12 z-10 bg-background/80 backdrop-blur-md border border-border px-6 py-2.5 rounded-full shadow-sm text-xs font-bold tracking-[0.2em] uppercase text-foreground whitespace-nowrap"
+                  className="md:hidden absolute left-[28px] top-12 z-10 bg-background/80 backdrop-blur-md border border-border px-4 py-2 rounded-full shadow-sm text-[10px] font-bold tracking-[0.2em] uppercase text-foreground whitespace-nowrap"
+                  style={{ transform: `translate(-50%, -50%)` }}
+                >
+                  {node.label}
+                </div>
+                {/* Desktop Badge */}
+                <div 
+                  className="hidden md:block absolute left-1/2 top-12 z-10 bg-background/80 backdrop-blur-md border border-border px-6 py-2.5 rounded-full shadow-sm text-xs font-bold tracking-[0.2em] uppercase text-foreground whitespace-nowrap"
                   style={{ transform: `translate(calc(-50% + ${params.startX}px), -50%)` }}
                 >
                   {node.label}
@@ -543,9 +553,11 @@ export default function MemoryTimeline({ stories }) {
               transition={{ duration: 0.7, ease: "easeOut" }}
               className="relative w-full group flex"
             >
-              {/* Wavy line down to next element */}
+              {/* Mobile straight line */}
+              <div className="md:hidden absolute top-12 left-[28px] w-0 h-[calc(100%+2rem)] border-l-2 border-dashed border-border/40 z-0"></div>
+              {/* Desktop Wavy line */}
               <svg 
-                className="absolute top-12 left-[28px] md:left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+2rem)] md:h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
+                className="hidden md:block absolute top-12 left-1/2 w-[100px] -translate-x-1/2 h-[calc(100%+4rem)] z-0 pointer-events-none text-border/40" 
                 viewBox="-50 0 100 100" 
                 preserveAspectRatio="none"
               >
@@ -559,9 +571,14 @@ export default function MemoryTimeline({ stories }) {
                 />
               </svg>
 
-              {/* Timeline Dot */}
+              {/* Mobile Dot */}
               <div 
-                className="absolute top-12 left-[28px] md:left-1/2 w-[14px] h-[14px] rounded-full border-[3px] border-background bg-foreground z-10 shadow-sm transition-transform duration-300 group-hover:scale-[1.4] group-hover:bg-accent"
+                className="md:hidden absolute top-12 left-[28px] w-[12px] h-[12px] rounded-full border-[2px] border-background bg-foreground z-10 shadow-sm transition-transform duration-300 group-hover:scale-[1.4] group-hover:bg-accent"
+                style={{ transform: `translate(-50%, -50%)` }}
+              ></div>
+              {/* Desktop Dot */}
+              <div 
+                className="hidden md:block absolute top-12 left-1/2 w-[14px] h-[14px] rounded-full border-[3px] border-background bg-foreground z-10 shadow-sm transition-transform duration-300 group-hover:scale-[1.4] group-hover:bg-accent"
                 style={{ transform: `translate(calc(-50% + ${params.startX}px), -50%)` }}
               ></div>
               
@@ -577,7 +594,7 @@ export default function MemoryTimeline({ stories }) {
               
               {/* Card Container */}
               <div 
-                className={`relative z-20 w-[calc(100%-3rem)] ml-16 md:w-[calc(50%-2.5rem-2rem)] lg:md:w-[calc(50%-2.5rem-4rem)] ${
+                className={`relative z-20 w-[calc(100%-4.5rem)] ml-14 md:w-[calc(50%-2.5rem-2rem)] lg:md:w-[calc(50%-2.5rem-4rem)] ${
                   isLeft ? 'md:ml-0 md:mr-auto' : 'md:ml-auto md:mr-0'
                 }`}
               >

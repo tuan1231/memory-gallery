@@ -30,6 +30,17 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Mobile App Optimizations */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Allow selection in inputs and textareas */
+input, textarea {
+  user-select: auto;
 }
 
 ::selection {

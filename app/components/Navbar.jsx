@@ -252,10 +252,10 @@ export default function Navbar({ user }) {
               )}
             </Link>
 
-            {/* Hamburger */}
+            {/* Hamburger (Hidden now) */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 rounded-full hover:bg-foreground/5 transition-colors"
+              className="hidden p-2 rounded-full hover:bg-foreground/5 transition-colors"
               aria-label="Toggle Menu"
             >
               {mobileOpen ? <X size={22} weight="bold" /> : <List size={22} weight="bold" />}

@@ -22,12 +22,8 @@ export default async function MapPage() {
         </Link>
       </div>
 
-      <div className="flex-1 w-full min-h-[400px] mb-4">
+      <div className="flex-1 w-full flex flex-col min-h-0 pb-4">
         <DynamicMap places={places} />
-      </div>
-      
-      <div className="shrink-0 text-center text-foreground/50 text-xs uppercase tracking-widest font-medium py-2">
-        Click anywhere on the map to add a new place
       </div>
     </div>
   );
