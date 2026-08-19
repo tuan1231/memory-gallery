@@ -195,6 +195,15 @@ export default function MapComponent({ places = [] }) {
     }
   };
 
+  const handleSelectFromList = (place) => {
+    setSelectedPlace(place);
+    const loc = [place.lat, place.lng];
+    setMapCenter(loc);
+    flyToLocation(loc);
+    setIsAdding(false);
+    setNewMarkerPos(null);
+  };
+
   const handleSelectSearchResult = (result) => {
     const loc = [parseFloat(result.lat), parseFloat(result.lon)];
     setMapCenter([...loc]);
@@ -269,8 +278,10 @@ export default function MapComponent({ places = [] }) {
   };
 
   return (
-    <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-border/50 z-0 flex flex-col md:block">
+    <div className="flex flex-col md:flex-row w-full h-full gap-4 relative z-0">
       
+      {/* Map Container */}
+      <div className="relative w-full h-[55%] md:h-full md:flex-1 rounded-3xl overflow-hidden shadow-2xl border border-border/50 shrink-0 z-0">
       {/* Search Bar Overlay */}
       <SearchOverlay onSelectResult={handleSelectSearchResult} userLocation={userLocation} />
       
@@ -424,6 +435,50 @@ export default function MapComponent({ places = [] }) {
           </form>
         </div>
       )}
+      </div>
+
+      {/* Places List Container */}
+      <div className="flex-1 w-full md:w-80 lg:w-96 shrink-0 flex flex-col bg-card-bg/50 backdrop-blur-md rounded-3xl border border-border/50 overflow-hidden shadow-2xl">
+        <div className="p-4 border-b border-border/50 bg-foreground/5 shrink-0 flex justify-between items-center">
+          <h3 className="font-bold uppercase tracking-widest text-sm text-foreground">Saved Places</h3>
+          <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-1 rounded-full">{places.length}</span>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-3">
+          {places.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-6 text-foreground/50">
+              <MapPin size={48} className="mb-4 opacity-20" weight="fill" />
+              <p className="text-sm">No places saved yet.</p>
+              <p className="text-xs mt-2">Click anywhere on the map to add your first place.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {places.map((place) => (
+                <button
+                  key={place.id}
+                  onClick={() => handleSelectFromList(place)}
+                  className={`text-left p-4 rounded-2xl border transition-all ${
+                    selectedPlace?.id === place.id 
+                      ? 'border-accent bg-accent/5 shadow-md' 
+                      : 'border-border/50 hover:border-foreground/30 hover:bg-foreground/5'
+                  }`}
+                >
+                  <h4 className="font-bold text-foreground mb-1 pr-2 line-clamp-1">{place.name}</h4>
+                  <p className="text-xs text-foreground/60 flex items-start gap-1 mb-2">
+                    <MapPin size={14} className="shrink-0 mt-0.5" />
+                    <span className="line-clamp-2">{place.address}</span>
+                  </p>
+                  {place.notes && (
+                    <p className="text-xs text-foreground/50 italic line-clamp-2 bg-foreground/5 p-2 rounded-lg">
+                      "{place.notes}"
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

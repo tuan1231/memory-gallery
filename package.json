@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/postcss": "^4.3.3",
@@ -28,6 +30,9 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10"
   }

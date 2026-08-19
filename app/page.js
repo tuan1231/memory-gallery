@@ -30,7 +30,7 @@ export default async function Home() {
       ) : (
         <>
           <Timeline stories={stories} />
-          <ScrollRevealGrid className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6 pb-12">
+          <ScrollRevealGrid className="columns-2 lg:columns-3 xl:columns-4 gap-2 sm:gap-4 md:gap-6 space-y-2 sm:space-y-4 md:space-y-6 pb-12">
             {stories.map(story => (
               <MasonryItem key={story.id} story={story} />
             ))}
