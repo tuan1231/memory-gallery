@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'memory-gallery',
   webDir: 'public',
   server: {
-    url: 'http://10.0.2.2:3000', // Change this to your Netlify URL for production
-    cleartext: true
+    url: 'https://memoryhtt.site',
+    cleartext: false
   }
 };
 
