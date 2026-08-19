@@ -20,6 +20,7 @@
     "mapbox-gl": "^3.27.0",
     "motion": "^12.42.2",
     "next": "16.2.10",
+    "nextjs-toploader": "^3.9.17",
     "postcss": "^8.5.20",
     "quill": "^2.0.3",
     "react": "19.2.4",
