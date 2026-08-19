@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google';
 import ServerLayoutWrapper from './components/ServerLayoutWrapper';
 import dynamic from 'next/dynamic';
+import NextTopLoader from 'nextjs-toploader';
 import "./globals.css";
 
 const DynamicBackground = dynamic(() => import('./components/DynamicBackground'));
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} bg-background text-foreground min-h-[100dvh] flex flex-col transition-colors duration-300`}>
+        <NextTopLoader color="#E07A5F" showSpinner={false} height={3} shadow="0 0 10px #E07A5F,0 0 5px #E07A5F" />
         <DynamicBackground />
         <ServerLayoutWrapper>
           {children}
