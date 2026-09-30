@@ -3,7 +3,7 @@ import { getArchivedStories } from '../../lib/data';
 import MasonryItem from '../../components/MasonryItem';
 import ScrollRevealGrid from '../../components/ScrollRevealGrid';
 
-export const revalidate = 0; // Ensure data is always fresh
+export const revalidate = 3600; // Cache page for 1 hour, revalidate on demand
 
 export default async function ArchivePage() {
   const stories = await getArchivedStories();

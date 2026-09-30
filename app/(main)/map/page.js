@@ -2,7 +2,7 @@ import { getMapPlaces } from '../../lib/data';
 import DynamicMap from '../../components/DynamicMap';
 import Link from 'next/link';
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function MapPage() {
   const places = await getMapPlaces();

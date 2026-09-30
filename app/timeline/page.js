@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getStories } from '../lib/data';
 import MemoryTimeline from '../components/MemoryTimeline';
 
-export const revalidate = 0; // Ensure data is always fresh
+export const revalidate = 3600; // Cache page for 1 hour, revalidate on demand
 
 export default async function TimelinePage() {
   const stories = await getStories();

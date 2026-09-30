@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { cookies } from 'next/headers';
 import { decryptSession } from './session';
+import { revalidatePath } from 'next/cache';
 
 async function requireAuth() {
   const cookieStore = await cookies();
@@ -101,6 +102,7 @@ export async function createStory(formData) {
     }
   }
 
+  revalidatePath('/', 'layout');
   return storyId;
 }
 
@@ -121,6 +123,7 @@ export async function archiveStory(id) {
   if (!data || data.length === 0) {
     throw new Error('Archive failed! Please check Supabase: The "stories" table is blocked by RLS UPDATE policy. Please disable RLS or add a policy allowing UPDATE.');
   }
+  revalidatePath('/', 'layout');
 }
 
 export async function restoreStory(id) {
@@ -140,6 +143,7 @@ export async function restoreStory(id) {
   if (!data || data.length === 0) {
     throw new Error('Restore failed! Blocked by RLS UPDATE policy on Supabase.');
   }
+  revalidatePath('/', 'layout');
 }
 
 export async function deleteStoryPermanently(id) {
@@ -185,6 +189,7 @@ export async function deleteStoryPermanently(id) {
       console.error('Failed to delete image from storage:', e);
     }
   }
+  revalidatePath('/', 'layout');
 }
 
 export async function addMapPlace(data) {
@@ -211,6 +216,7 @@ export async function addMapPlace(data) {
     throw new Error('Failed to save map place.');
   }
 
+  revalidatePath('/', 'layout');
   return true;
 }
 
@@ -231,6 +237,7 @@ export async function deleteMapPlace(id) {
   if (!data || data.length === 0) {
     throw new Error('Deletion failed! The "love_map_places" table is blocked by RLS DELETE policy on Supabase.');
   }
+  revalidatePath('/', 'layout');
   return true;
 }
 
@@ -338,6 +345,7 @@ export async function addComment(storyId, content, parentId = null) {
     // Process notifications
     await processCommentNotifications(storyId, parentId, data, session, authorName, avatarUrl);
     
+    revalidatePath('/', 'layout');
     return data;
   } catch (err) {
     // Fallback: insert without avatar_url
@@ -355,6 +363,7 @@ export async function addComment(storyId, content, parentId = null) {
       // Process notifications
       await processCommentNotifications(storyId, parentId, data, session, authorName, avatarUrl);
       
+      revalidatePath('/', 'layout');
       return data;
     }
     
@@ -399,6 +408,7 @@ export async function reactToComment(commentId, newEmoji, oldEmoji = null) {
     throw new Error('Failed to react');
   }
   
+  revalidatePath('/', 'layout');
   return data;
 }
 
