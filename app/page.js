@@ -4,7 +4,7 @@ import MasonryItem from './components/MasonryItem';
 import Timeline from './components/Timeline';
 import ScrollRevealGrid from './components/ScrollRevealGrid';
 
-export const revalidate = 0; // Ensure data is always fresh (can be optimized later)
+export const revalidate = 3600; // Cache page for 1 hour, revalidate on demand or after 1h
 
 export default async function Home() {
   const stories = await getStories();
